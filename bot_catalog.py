@@ -295,6 +295,8 @@ def build_application():
 
 async def run_bot():
 
+    print("=== RUN_BOT START ===", flush=True)
+
     global application
     global BOT_LOOP
 
@@ -322,8 +324,15 @@ async def run_bot():
 
 
 def run_bot_loop():
+    print("=== BOT THREAD START ===", flush=True)
 
-    asyncio.run(run_bot())
+    try:
+        asyncio.run(run_bot())
+    except Exception as error:
+        print(
+            f"=== BOT THREAD ERROR: {type(error).__name__}: {error}",
+            flush=True
+        )
 
 
 # ============================================================
