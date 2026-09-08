@@ -305,13 +305,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Создаем кнопки категорий
     keyboard = []
 
-    for category in categories:
+    for index, category in enumerate(categories):
         keyboard.append([
             InlineKeyboardButton(
                 category,
-                callback_data=f"category:{categories.index(category)}"
+                callback_data=f"category:{index}"
             )
         ])
+
+    # Кнопка корзины
+    keyboard.append([
+        InlineKeyboardButton(
+            "🛒 Корзина",
+            callback_data="show_cart"
+        )
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -751,6 +759,14 @@ async def back_categories(
                 callback_data=f"category:{index}"
             )
         ])
+
+    # Корзина также доступна после возврата к категориям
+    keyboard.append([
+        InlineKeyboardButton(
+            "🛒 Корзина",
+            callback_data="show_cart"
+        )
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
