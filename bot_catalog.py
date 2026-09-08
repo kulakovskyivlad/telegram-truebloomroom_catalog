@@ -13,7 +13,9 @@ from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
+    MessageHandler,
     ContextTypes,
+    filters,
 )
 
 
@@ -732,6 +734,13 @@ async def show_cart(
         f"Итого: **{format_price(total)} грн**"
     )
 
+    keyboard.append([
+        InlineKeyboardButton(
+            "🛍 Оформить заказ",
+            callback_data="checkout"
+        )
+    ])
+
     # Кнопка полной очистки корзины
     keyboard.append([
         InlineKeyboardButton(
@@ -901,6 +910,267 @@ async def clear_cart(
     await query.edit_message_text(
         "🛒 Корзина пуста.",
         reply_markup=reply_markup,
+    )
+
+async def checkout(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    cart = context.user_data.get(
+        "cart",
+        []
+    )
+
+    if not cart:
+        await query.edit_message_text(
+            "🛒 Корзина пуста."
+        )
+
+        return
+
+    # Начинаем оформление заказа
+    context.user_data["checkout_step"] = "name"
+    context.user_data["customer"] = {}
+
+    await query.edit_message_text(
+        "📝 Оформление заказа\n\n"
+        "Как вас зовут?"
+    )
+
+    print(
+        "=== CHECKOUT STARTED ===",
+        flush=True
+    )
+
+async def checkout_message(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    step = context.user_data.get(
+        "checkout_step"
+    )
+
+    if not step:
+        return
+
+    text = update.message.text.strip()
+
+    if not text:
+        return
+
+    customer = context.user_data.setdefault(
+        "customer",
+        {}
+    )
+
+    # -------------------------
+    # ИМЯ
+    # -------------------------
+
+    if step == "name":
+
+        customer["name"] = text
+
+        context.user_data["checkout_step"] = "phone"
+
+        await update.message.reply_text(
+            "📞 Укажите номер телефона:"
+        )
+
+        return
+
+    # -------------------------
+    # ТЕЛЕФОН
+    # -------------------------
+
+    if step == "phone":
+
+        customer["phone"] = text
+
+        context.user_data["checkout_step"] = "city"
+
+        await update.message.reply_text(
+            "📍 Укажите город:"
+        )
+
+        return
+
+    # -------------------------
+    # ГОРОД
+    # -------------------------
+
+    if step == "city":
+
+        customer["city"] = text
+
+        context.user_data["checkout_step"] = None
+
+        await show_order_confirmation(
+            update,
+            context
+        )
+
+        return
+
+async def show_order_confirmation(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    customer = context.user_data.get(
+        "customer",
+        {}
+    )
+
+    cart = context.user_data.get(
+        "cart",
+        []
+    )
+
+    if not cart:
+        await update.message.reply_text(
+            "🛒 Корзина пуста."
+        )
+
+        return
+
+    text = (
+        "📝 Проверьте заказ\n\n"
+        f"👤 {customer.get('name', '')}\n"
+        f"📞 {customer.get('phone', '')}\n"
+        f"📍 {customer.get('city', '')}\n\n"
+    )
+
+    total = 0
+
+    for item in cart:
+
+        line_total = (
+            item["price"] *
+            item["quantity"]
+        )
+
+        total += line_total
+
+        text += (
+            f"• {item['name']}\n"
+            f"  {item['quantity']} × "
+            f"{format_price(item['price'])} грн = "
+            f"{format_price(line_total)} грн\n\n"
+        )
+
+    text += (
+        f"Итого: **{format_price(total)} грн**"
+    )
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "✅ Подтвердить заказ",
+                callback_data="confirm_order"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "✏️ Изменить данные",
+                callback_data="edit_customer"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "❌ Отменить",
+                callback_data="cancel_checkout"
+            )
+        ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(
+        keyboard
+    )
+
+    await update.message.reply_text(
+        text,
+        reply_markup=reply_markup,
+        parse_mode="Markdown",
+    )
+
+async def confirm_order(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    cart = context.user_data.get(
+        "cart",
+        []
+    )
+
+    customer = context.user_data.get(
+        "customer",
+        {}
+    )
+
+    if not cart:
+        await query.edit_message_text(
+            "🛒 Корзина пуста."
+        )
+
+        return
+
+    await query.edit_message_text(
+        "✅ Заказ подтверждён!\n\n"
+        "Спасибо за заказ. Мы свяжемся с вами "
+        "для подтверждения наличия товаров."
+    )
+
+    print(
+        "=== ORDER CONFIRMED ===",
+        flush=True
+    )
+
+    print(
+        f"Customer: {customer}",
+        flush=True
+    )
+
+    print(
+        f"Cart: {cart}",
+        flush=True
+    )
+
+async def cancel_checkout(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    context.user_data["checkout_step"] = None
+    context.user_data["customer"] = {}
+
+    await query.edit_message_text(
+        "❌ Оформление заказа отменено."
+    )
+
+async def edit_customer(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    context.user_data["checkout_step"] = "name"
+    context.user_data["customer"] = {}
+
+    await query.edit_message_text(
+        "📝 Введите имя заново:"
     )
 
 async def back_products(
@@ -1080,6 +1350,41 @@ def build_application():
         CallbackQueryHandler(
             clear_cart,
             pattern=r"^clear_cart$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            checkout,
+            pattern=r"^checkout$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            confirm_order,
+            pattern=r"^confirm_order$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            edit_customer,
+            pattern=r"^edit_customer$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            cancel_checkout,
+            pattern=r"^cancel_checkout$"
+        )
+    )
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            checkout_message
         )
     )
 
