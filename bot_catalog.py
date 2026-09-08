@@ -678,9 +678,23 @@ async def show_cart(
         []
     )
 
+    # Кнопка возврата к каталогу
+    back_button = InlineKeyboardButton(
+        "← Назад к каталогу",
+        callback_data="back_categories"
+    )
+
+    # Если корзина пустая
     if not cart:
+        keyboard = [
+            [back_button]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
         await query.edit_message_text(
-            "🛒 Корзина пуста."
+            "🛒 Корзина пуста.",
+            reply_markup=reply_markup,
         )
 
         return
@@ -709,12 +723,7 @@ async def show_cart(
     )
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                "← Назад к каталогу",
-                callback_data="back_categories"
-            )
-        ]
+        [back_button]
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
