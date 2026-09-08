@@ -734,6 +734,54 @@ async def show_cart(
         parse_mode="Markdown",
     )
 
+async def back_products(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    products = context.user_data.get(
+        "category_products"
+    )
+
+    if not products:
+        await query.edit_message_text(
+            "Список товаров устарел. Нажмите /start."
+        )
+
+        return
+
+    keyboard = []
+
+    for index, product in enumerate(products):
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{product['name']} — "
+                f"{format_price(product['price'])} грн",
+                callback_data=f"product:{index}"
+            )
+        ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            "← Назад к категориям",
+            callback_data="back_categories"
+        )
+    ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # Получаем категорию из первого товара
+    category = products[0]["category"]
+
+    await query.edit_message_text(
+        f"🌿 {category}\n\n"
+        "Выберите товар:",
+        reply_markup=reply_markup,
+    )
+
 async def back_categories(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
@@ -842,6 +890,13 @@ def build_application():
         CallbackQueryHandler(
             show_cart,
             pattern=r"^show_cart$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            back_products,
+            pattern=r"^back_products$"
         )
     )
 
