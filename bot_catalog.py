@@ -1161,23 +1161,52 @@ async def cancel_checkout(
     context.user_data["checkout_step"] = None
     context.user_data["customer"] = {}
 
+    catalog = context.user_data.get("catalog")
+
+    if not catalog:
+        await query.edit_message_text(
+            "Каталог устарел. Нажмите /start и попробуйте снова."
+        )
+
+        return
+
+    categories = []
+
+    for product in catalog:
+        category = product["category"]
+
+        if category not in categories:
+            categories.append(category)
+
+    keyboard = []
+
+    for index, category in enumerate(categories):
+        keyboard.append([
+            InlineKeyboardButton(
+                category,
+                callback_data=f"category:{index}"
+            )
+        ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            "🛒 Корзина",
+            callback_data="show_cart"
+        )
+    ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await query.edit_message_text(
-        "❌ Оформление заказа отменено."
+        "❌ Оформление заказа отменено.\n\n"
+        "🌿 Каталог\n\n"
+        "Выберите категорию:",
+        reply_markup=reply_markup,
     )
 
-async def edit_customer(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-):
-    query = update.callback_query
-
-    await query.answer()
-
-    context.user_data["checkout_step"] = "name"
-    context.user_data["customer"] = {}
-
-    await query.edit_message_text(
-        "📝 Введите имя заново:"
+    print(
+        "=== CHECKOUT CANCELLED ===",
+        flush=True
     )
 
 async def back_products(
