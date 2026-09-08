@@ -142,8 +142,11 @@ def load_catalog():
 
     rows = worksheet.get_all_values()
 
-    if not rows:
-        return []
+if len(rows) < 2:
+    return []
+
+# Заголовки находятся во второй строке
+headers = rows[1]
 
     headers = rows[0]
 
@@ -162,7 +165,7 @@ def load_catalog():
     products = {}
 
     # Читаем строки начиная со второй
-    for row in rows[1:]:
+    for row in rows[2:]:
 
         # Если строка короче заголовков — дополняем пустыми значениями
         if len(row) <= max(product_index, stock_index, price_index):
