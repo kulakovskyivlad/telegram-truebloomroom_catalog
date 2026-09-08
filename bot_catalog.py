@@ -128,10 +128,9 @@ def load_catalog():
     Читает лист Склад и формирует каталог.
 
     Правила:
-
     1. Одинаковые товары объединяются.
     2. Остаток суммируется по всем строкам.
-    3. Цена берется из ПОСЛЕДНЕЙ строки этого товара.
+    3. Цена берется из последней строки этого товара.
     4. Товар показывается только если:
        - суммарный остаток > 0
        - цена из последней строки > 0
@@ -142,13 +141,11 @@ def load_catalog():
 
     rows = worksheet.get_all_values()
 
-if len(rows) < 2:
-    return []
+    if len(rows) < 2:
+        return []
 
-# Заголовки находятся во второй строке
-headers = rows[1]
-
-    headers = rows[0]
+    # Заголовки находятся во второй строке
+    headers = rows[1]
 
     # Определяем номера нужных колонок
     try:
@@ -164,24 +161,40 @@ headers = rows[1]
 
     products = {}
 
-    # Читаем строки начиная со второй
+    # Товары начинаются с третьей строки
     for row in rows[2:]:
 
-        # Если строка короче заголовков — дополняем пустыми значениями
-        if len(row) <= max(product_index, stock_index, price_index):
+        if len(row) <= max(
+            product_index,
+            stock_index,
+            price_index
+        ):
             row = row + [""] * (
-                max(product_index, stock_index, price_index) + 1 - len(row)
+                max(
+                    product_index,
+                    stock_index,
+                    price_index
+                ) + 1 - len(row)
             )
 
-        product_name = str(row[product_index]).strip()
+        product_name = str(
+            row[product_index]
+        ).strip()
 
         if not product_name:
             continue
 
-        stock = parse_number(row[stock_index])
-        price = parse_number(row[price_index])
+        stock = parse_number(
+            row[stock_index]
+        )
 
-        key = normalize_product_name(product_name)
+        price = parse_number(
+            row[price_index]
+        )
+
+        key = normalize_product_name(
+            product_name
+        )
 
         if key not in products:
             products[key] = {
@@ -190,20 +203,16 @@ headers = rows[1]
                 "price": 0.0,
             }
 
-        # Остаток суммируем
+        # Остаток суммируем по всем строкам
         products[key]["stock"] += stock
 
-        # Цена ВСЕГДА заменяется.
-        # Поэтому после прохода по таблице
-        # здесь останется цена последней строки.
+        # Цена берется из последней строки
         products[key]["price"] = price
 
-        # Название тоже берем из последней строки.
+        # Название берем из последней строки
         products[key]["name"] = product_name
 
-    # Оставляем только товары:
-    # остаток > 0
-    # цена > 0
+    # Формируем итоговый каталог
     catalog = []
 
     for product in products.values():
