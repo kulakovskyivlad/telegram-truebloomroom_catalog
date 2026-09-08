@@ -224,16 +224,23 @@ def load_catalog():
 # ============================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """
-    Команда /start.
-    Пока просто выводим каталог текстом.
-    """
+    print("=== START COMMAND ===", flush=True)
 
     try:
+        print("Пробуем загрузить каталог...", flush=True)
+
         catalog = load_catalog()
 
+        print(
+            f"Каталог загружен. Товаров: {len(catalog)}",
+            flush=True
+        )
+
     except Exception as error:
-        print("Ошибка загрузки каталога:", error)
+        print(
+            f"ОШИБКА ЗАГРУЗКИ КАТАЛОГА: {type(error).__name__}: {error}",
+            flush=True
+        )
 
         await update.message.reply_text(
             "Не удалось загрузить каталог. Попробуйте еще раз позже."
@@ -242,6 +249,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if not catalog:
+        print("Каталог пустой", flush=True)
+
         await update.message.reply_text(
             "Сейчас в каталоге нет доступных товаров."
         )
@@ -257,6 +266,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     await update.message.reply_text(text)
+
+    print("Каталог отправлен пользователю", flush=True)
 
 
 # ============================================================
