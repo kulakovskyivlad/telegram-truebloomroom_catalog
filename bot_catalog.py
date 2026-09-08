@@ -1209,6 +1209,21 @@ async def cancel_checkout(
         flush=True
     )
 
+async def edit_customer(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    context.user_data["checkout_step"] = "name"
+    context.user_data["customer"] = {}
+
+    await query.edit_message_text(
+        "📝 Введите имя заново:"
+    )
+
 async def back_products(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
