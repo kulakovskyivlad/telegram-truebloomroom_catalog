@@ -1153,26 +1153,110 @@ async def confirm_order(
 
         return
 
-    await query.edit_message_text(
-        "✅ Заказ подтверждён!\n\n"
-        "Спасибо за заказ. Мы свяжемся с вами "
-        "для подтверждения наличия товаров."
-    )
+    try:
+        # Получаем номер нового заказа
+        order_number = get_next_order_number()
 
-    print(
-        "=== ORDER CONFIRMED ===",
-        flush=True
-    )
+        # Получаем данные Telegram-профиля
+        telegram_user = update.effective_user
 
-    print(
-        f"Customer: {customer}",
-        flush=True
-    )
+        telegram_id = telegram_user.id
+        telegram_username = (
+            f"@{telegram_user.username}"
+            if telegram_user.username
+            else ""
+        )
+        telegram_name = telegram_user.full_name or ""
 
-    print(
-        f"Cart: {cart}",
-        flush=True
-    )
+        # Дата и время заказа
+        from datetime import datetime
+
+        order_date = datetime.now().strftime(
+            "%d.%m.%Y %H:%M:%S"
+        )
+
+        # Получаем лист заказов
+        worksheet = get_orders_sheet()
+
+        rows_to_add = []
+
+        for item in cart:
+
+            quantity = item["quantity"]
+            price = item["price"]
+
+            revenue = quantity * price
+
+            rows_to_add.append([
+                order_number,
+                item["name"],
+                quantity,
+                price,
+                revenue,
+                customer.get("name", ""),
+                customer.get("phone", ""),
+                customer.get("city", ""),
+                order_date,
+                telegram_id,
+                telegram_username,
+                telegram_name,
+            ])
+
+        # Записываем все товары заказа одним действием
+        worksheet.append_rows(
+            rows_to_add,
+            value_input_option="USER_ENTERED"
+        )
+
+        print(
+            f"=== ORDER SAVED: {order_number} ===",
+            flush=True
+        )
+
+        print(
+            f"Telegram ID: {telegram_id}",
+            flush=True
+        )
+
+        print(
+            f"Telegram username: {telegram_username}",
+            flush=True
+        )
+
+        print(
+            f"Customer: {customer}",
+            flush=True
+        )
+
+        print(
+            f"Cart: {cart}",
+            flush=True
+        )
+
+        # Очищаем корзину только после успешной записи
+        context.user_data["cart"] = []
+        context.user_data["checkout_step"] = None
+        context.user_data["customer"] = {}
+
+        await query.edit_message_text(
+            f"✅ Заказ №{order_number} оформлен!\n\n"
+            "Спасибо за заказ 🌿\n"
+            "Мы свяжемся с вами для подтверждения "
+            "наличия товаров."
+        )
+
+    except Exception as error:
+
+        print(
+            f"=== ORDER SAVE ERROR: "
+            f"{type(error).__name__}: {error}",
+            flush=True
+        )
+
+        await query.edit_message_text(
+            "❌ Не удалось оформить заказ.\n\n"
+            "Попробуйте ещё раз немного позже."
+        )
 
 async def cancel_checkout(
     update: Update,
