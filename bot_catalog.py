@@ -302,26 +302,46 @@ async def run_bot():
 
     BOT_LOOP = asyncio.get_running_loop()
 
+    print("=== EVENT LOOP READY ===", flush=True)
+
     application = build_application()
 
+    print("=== APPLICATION CREATED ===", flush=True)
+
+    print("=== INITIALIZING TELEGRAM ===", flush=True)
+
     await application.initialize()
+
+    print("=== TELEGRAM INITIALIZED ===", flush=True)
+
+    print("=== STARTING TELEGRAM APPLICATION ===", flush=True)
+
     await application.start()
 
+    print("=== TELEGRAM APPLICATION STARTED ===", flush=True)
+
     webhook_url = f"{RENDER_EXTERNAL_URL}/telegram"
+
+    print(
+        f"=== SETTING WEBHOOK: {webhook_url} ===",
+        flush=True
+    )
 
     await application.bot.set_webhook(
         url=webhook_url,
         drop_pending_updates=True,
     )
 
-    print("Telegram bot started")
-    print("Webhook:", webhook_url)
+    print("=== WEBHOOK SET ===", flush=True)
+
+    print("Telegram bot started", flush=True)
+    print(f"Webhook: {webhook_url}", flush=True)
 
     BOT_READY.set()
 
-    # Не завершаем event loop
-    await asyncio.Event().wait()
+    print("=== BOT READY ===", flush=True)
 
+    await asyncio.Event().wait()
 
 def run_bot_loop():
     print("=== BOT THREAD START ===", flush=True)
