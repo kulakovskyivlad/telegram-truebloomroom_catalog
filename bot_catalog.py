@@ -861,6 +861,13 @@ async def remove_cart_item(
 
     keyboard.append([
         InlineKeyboardButton(
+            "🛍 Оформить заказ",
+            callback_data="checkout"
+        )
+    ])
+
+    keyboard.append([
+        InlineKeyboardButton(
             "🗑 Очистить корзину",
             callback_data="clear_cart"
         )
