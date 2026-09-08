@@ -59,6 +59,30 @@ def get_stock_sheet():
     spreadsheet = get_spreadsheet()
     return spreadsheet.worksheet(SHEET_NAME)
 
+def get_orders_sheet():
+    spreadsheet = get_spreadsheet()
+    return spreadsheet.worksheet("Заказы_бот")
+
+def get_next_order_number():
+    worksheet = get_orders_sheet()
+
+    values = worksheet.col_values(1)
+
+    if len(values) <= 1:
+        return 1001
+
+    numbers = []
+
+    for value in values[1:]:
+        try:
+            numbers.append(int(str(value).strip()))
+        except ValueError:
+            continue
+
+    if not numbers:
+        return 1001
+
+    return max(numbers) + 1
 
 # ============================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
