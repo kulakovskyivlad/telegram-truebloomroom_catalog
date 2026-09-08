@@ -358,7 +358,6 @@ async def category_button(
 
         return
 
-    # Получаем список уникальных категорий
     categories = []
 
     for product in catalog:
@@ -376,7 +375,6 @@ async def category_button(
 
     selected_category = categories[category_index]
 
-    # Выбираем товары этой категории
     products = [
         product
         for product in catalog
@@ -390,7 +388,9 @@ async def category_button(
 
         return
 
-    # Кнопка каждого товара
+    # Сохраняем товары выбранной категории
+    context.user_data["category_products"] = products
+
     keyboard = []
 
     for index, product in enumerate(products):
@@ -402,7 +402,6 @@ async def category_button(
             )
         ])
 
-    # Кнопка назад
     keyboard.append([
         InlineKeyboardButton(
             "← Назад к категориям",
@@ -411,9 +410,6 @@ async def category_button(
     ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-
-    # Сохраняем товары выбранной категории
-    context.user_data["category_products"] = products
 
     await query.edit_message_text(
         f"🌿 {selected_category}\n\n"
@@ -424,6 +420,301 @@ async def category_button(
     print(
         f"Выбрана категория: {selected_category}",
         flush=True
+    )
+
+async def product_button(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    print("=== PRODUCT BUTTON ===", flush=True)
+
+    try:
+        product_index = int(
+            query.data.split(":")[1]
+        )
+
+    except (ValueError, IndexError):
+        await query.edit_message_text(
+            "Не удалось определить товар."
+        )
+
+        return
+
+    products = context.user_data.get(
+        "category_products"
+    )
+
+    if not products:
+        await query.edit_message_text(
+            "Список товаров устарел. Нажмите /start."
+        )
+
+        return
+
+    if product_index >= len(products):
+        await query.edit_message_text(
+            "Этот товар больше недоступен. Нажмите /start."
+        )
+
+        return
+
+    product = products[product_index]
+
+    # Запоминаем выбранный товар
+    context.user_data["selected_product"] = product
+
+    # Начальное количество
+    context.user_data["selected_quantity"] = 1
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "−",
+                callback_data="quantity_minus"
+            ),
+            InlineKeyboardButton(
+                "1",
+                callback_data="quantity_current"
+            ),
+            InlineKeyboardButton(
+                "+",
+                callback_data="quantity_plus"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "🛒 Добавить в корзину",
+                callback_data="add_to_cart"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "← Назад к товарам",
+                callback_data="back_products"
+            )
+        ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        f"🌿 {product['name']}\n\n"
+        f"Цена: {format_price(product['price'])} грн\n\n"
+        "Выберите количество:",
+        reply_markup=reply_markup,
+    )
+
+    print(
+        f"Выбран товар: {product['name']}",
+        flush=True
+    )
+
+async def quantity_button(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    product = context.user_data.get(
+        "selected_product"
+    )
+
+    if not product:
+        await query.edit_message_text(
+            "Товар не выбран. Нажмите /start."
+        )
+
+        return
+
+    quantity = context.user_data.get(
+        "selected_quantity",
+        1
+    )
+
+    if query.data == "quantity_plus":
+        quantity += 1
+
+    elif query.data == "quantity_minus":
+        quantity = max(1, quantity - 1)
+
+    context.user_data["selected_quantity"] = quantity
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "−",
+                callback_data="quantity_minus"
+            ),
+            InlineKeyboardButton(
+                str(quantity),
+                callback_data="quantity_current"
+            ),
+            InlineKeyboardButton(
+                "+",
+                callback_data="quantity_plus"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "🛒 Добавить в корзину",
+                callback_data="add_to_cart"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "← Назад к товарам",
+                callback_data="back_products"
+            )
+        ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_reply_markup(
+        reply_markup=reply_markup
+    )
+
+async def add_to_cart(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer("Добавлено в корзину ✅")
+
+    product = context.user_data.get(
+        "selected_product"
+    )
+
+    quantity = context.user_data.get(
+        "selected_quantity",
+        1
+    )
+
+    if not product:
+        await query.edit_message_text(
+            "Товар не выбран. Нажмите /start."
+        )
+
+        return
+
+    cart = context.user_data.setdefault(
+        "cart",
+        []
+    )
+
+    # Проверяем, есть ли уже этот товар
+    existing_item = None
+
+    for item in cart:
+        if item["name"] == product["name"]:
+            existing_item = item
+            break
+
+    if existing_item:
+        existing_item["quantity"] += quantity
+    else:
+        cart.append({
+            "name": product["name"],
+            "price": product["price"],
+            "quantity": quantity,
+        })
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "🛒 Перейти в корзину",
+                callback_data="show_cart"
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "← Назад к товарам",
+                callback_data="back_products"
+            )
+        ],
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        f"✅ Добавлено в корзину\n\n"
+        f"{product['name']}\n"
+        f"Количество: {quantity}\n"
+        f"Цена: {format_price(product['price'])} грн",
+        reply_markup=reply_markup,
+    )
+
+    print(
+        f"Добавлено в корзину: "
+        f"{product['name']} x {quantity}",
+        flush=True
+    )
+
+async def show_cart(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    cart = context.user_data.get(
+        "cart",
+        []
+    )
+
+    if not cart:
+        await query.edit_message_text(
+            "🛒 Корзина пуста."
+        )
+
+        return
+
+    text = "🛒 Ваша корзина\n\n"
+
+    total = 0
+
+    for item in cart:
+        line_total = (
+            item["price"] *
+            item["quantity"]
+        )
+
+        total += line_total
+
+        text += (
+            f"• {item['name']}\n"
+            f"  {item['quantity']} × "
+            f"{format_price(item['price'])} грн = "
+            f"{format_price(line_total)} грн\n\n"
+        )
+
+    text += (
+        f"Итого: **{format_price(total)} грн**"
+    )
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "← Назад к каталогу",
+                callback_data="back_categories"
+            )
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        text,
+        reply_markup=reply_markup,
+        parse_mode="Markdown",
     )
 
 async def back_categories(
@@ -499,6 +790,33 @@ def build_application():
         CallbackQueryHandler(
             back_categories,
             pattern=r"^back_categories$"
+        )
+    )
+    app.add_handler(
+        CallbackQueryHandler(
+            product_button,
+            pattern=r"^product:\d+$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            quantity_button,
+            pattern=r"^quantity_(minus|plus|current)$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            add_to_cart,
+            pattern=r"^add_to_cart$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            show_cart,
+            pattern=r"^show_cart$"
         )
     )
 
