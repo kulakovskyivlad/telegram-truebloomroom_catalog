@@ -1161,12 +1161,17 @@ async def confirm_order(
         telegram_user = update.effective_user
 
         telegram_id = telegram_user.id
+
         telegram_username = (
             f"@{telegram_user.username}"
             if telegram_user.username
             else ""
         )
-        telegram_name = telegram_user.full_name or ""
+
+        telegram_name = (
+            telegram_user.full_name
+            or ""
+        )
 
         # Дата и время заказа
         from datetime import datetime
@@ -1202,7 +1207,7 @@ async def confirm_order(
                 telegram_name,
             ])
 
-        # Записываем все товары заказа одним действием
+        # Записываем заказ в Google Sheets
         worksheet.append_rows(
             rows_to_add,
             value_input_option="USER_ENTERED"
@@ -1233,16 +1238,31 @@ async def confirm_order(
             flush=True
         )
 
-        # Очищаем корзину только после успешной записи
+        # Очищаем корзину после успешной записи
         context.user_data["cart"] = []
         context.user_data["checkout_step"] = None
         context.user_data["customer"] = {}
 
+        # Кнопка возврата в каталог
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "← Вернуться в каталог",
+                    callback_data="back_categories"
+                )
+            ]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(
+            keyboard
+        )
+
         await query.edit_message_text(
-            f"✅ Заказ №{order_number} оформлен!\n\n"
+            f"✅ Заказ №{order_number} успешно оформлен!\n\n"
             "Спасибо за заказ 🌿\n"
             "Мы свяжемся с вами для подтверждения "
-            "наличия товаров."
+            "наличия товаров.",
+            reply_markup=reply_markup,
         )
 
     except Exception as error:
