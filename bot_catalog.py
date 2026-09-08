@@ -8,8 +8,13 @@ import gspread
 from google.oauth2.service_account import Credentials
 from flask import Flask, request, jsonify
 
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+)
 
 
 # ============================================================
@@ -285,18 +290,183 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return
 
-    text = "🌿 Каталог\n\n"
+    # Сохраняем каталог для дальнейшей работы с кнопками
+    context.user_data["catalog"] = catalog
+
+    # Собираем уникальные категории
+    categories = []
 
     for product in catalog:
-        text += (
-            f"• {product['name']} — "
-            f"{format_price(product['price'])} грн\n"
-        )
+        category = product["category"]
 
-    await update.message.reply_text(text)
+        if category not in categories:
+            categories.append(category)
+
+    # Создаем кнопки категорий
+    keyboard = []
+
+    for category in categories:
+        keyboard.append([
+            InlineKeyboardButton(
+                category,
+                callback_data=f"category:{categories.index(category)}"
+            )
+        ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        "🌿 Каталог\n\nВыберите категорию:",
+        reply_markup=reply_markup,
+    )
+
+    print(
+        f"Категорий: {len(categories)}",
+        flush=True
+    )
 
     print("Каталог отправлен пользователю", flush=True)
 
+async def category_button(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    print("=== CATEGORY BUTTON ===", flush=True)
+
+    try:
+        category_index = int(
+            query.data.split(":")[1]
+        )
+
+    except (ValueError, IndexError):
+        await query.edit_message_text(
+            "Не удалось определить категорию."
+        )
+
+        return
+
+    catalog = context.user_data.get("catalog")
+
+    if not catalog:
+        await query.edit_message_text(
+            "Каталог устарел. Нажмите /start и попробуйте снова."
+        )
+
+        return
+
+    # Получаем список уникальных категорий
+    categories = []
+
+    for product in catalog:
+        category = product["category"]
+
+        if category not in categories:
+            categories.append(category)
+
+    if category_index >= len(categories):
+        await query.edit_message_text(
+            "Категория больше недоступна. Нажмите /start."
+        )
+
+        return
+
+    selected_category = categories[category_index]
+
+    # Выбираем товары этой категории
+    products = [
+        product
+        for product in catalog
+        if product["category"] == selected_category
+    ]
+
+    if not products:
+        await query.edit_message_text(
+            "В этой категории сейчас нет товаров."
+        )
+
+        return
+
+    # Кнопка каждого товара
+    keyboard = []
+
+    for index, product in enumerate(products):
+        keyboard.append([
+            InlineKeyboardButton(
+                f"{product['name']} — "
+                f"{format_price(product['price'])} грн",
+                callback_data=f"product:{index}"
+            )
+        ])
+
+    # Кнопка назад
+    keyboard.append([
+        InlineKeyboardButton(
+            "← Назад к категориям",
+            callback_data="back_categories"
+        )
+    ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    # Сохраняем товары выбранной категории
+    context.user_data["category_products"] = products
+
+    await query.edit_message_text(
+        f"🌿 {selected_category}\n\n"
+        "Выберите товар:",
+        reply_markup=reply_markup,
+    )
+
+    print(
+        f"Выбрана категория: {selected_category}",
+        flush=True
+    )
+
+async def back_categories(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer()
+
+    catalog = context.user_data.get("catalog")
+
+    if not catalog:
+        await query.edit_message_text(
+            "Каталог устарел. Нажмите /start и попробуйте снова."
+        )
+
+        return
+
+    categories = []
+
+    for product in catalog:
+        category = product["category"]
+
+        if category not in categories:
+            categories.append(category)
+
+    keyboard = []
+
+    for index, category in enumerate(categories):
+        keyboard.append([
+            InlineKeyboardButton(
+                category,
+                callback_data=f"category:{index}"
+            )
+        ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        "🌿 Каталог\n\nВыберите категорию:",
+        reply_markup=reply_markup,
+    )
 
 # ============================================================
 # TELEGRAM APPLICATION
@@ -316,6 +486,20 @@ def build_application():
 
     app.add_handler(
         CommandHandler("start", start)
+    )
+    
+    app.add_handler(
+        CallbackQueryHandler(
+            category_button,
+            pattern=r"^category:\d+$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            back_categories,
+            pattern=r"^back_categories$"
+        )
     )
 
     return app
