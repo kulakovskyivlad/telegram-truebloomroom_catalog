@@ -678,16 +678,15 @@ async def show_cart(
         []
     )
 
-    # Кнопка возврата к каталогу
-    back_button = InlineKeyboardButton(
-        "← Назад к каталогу",
-        callback_data="back_categories"
-    )
-
     # Если корзина пустая
     if not cart:
         keyboard = [
-            [back_button]
+            [
+                InlineKeyboardButton(
+                    "← Назад к каталогу",
+                    callback_data="back_categories"
+                )
+            ]
         ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -703,7 +702,10 @@ async def show_cart(
 
     total = 0
 
-    for item in cart:
+    keyboard = []
+
+    for index, item in enumerate(cart):
+
         line_total = (
             item["price"] *
             item["quantity"]
@@ -718,13 +720,33 @@ async def show_cart(
             f"{format_price(line_total)} грн\n\n"
         )
 
+        # Кнопка удаления конкретного товара
+        keyboard.append([
+            InlineKeyboardButton(
+                f"🗑 Удалить: {item['name']}",
+                callback_data=f"remove_cart:{index}"
+            )
+        ])
+
     text += (
         f"Итого: **{format_price(total)} грн**"
     )
 
-    keyboard = [
-        [back_button]
-    ]
+    # Кнопка полной очистки корзины
+    keyboard.append([
+        InlineKeyboardButton(
+            "🗑 Очистить корзину",
+            callback_data="clear_cart"
+        )
+    ])
+
+    # Возврат к каталогу
+    keyboard.append([
+        InlineKeyboardButton(
+            "← Назад к каталогу",
+            callback_data="back_categories"
+        )
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -732,6 +754,153 @@ async def show_cart(
         text,
         reply_markup=reply_markup,
         parse_mode="Markdown",
+    )
+
+async def remove_cart_item(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer("Товар удалён 🗑")
+
+    try:
+        item_index = int(
+            query.data.split(":")[1]
+        )
+
+    except (ValueError, IndexError):
+        await query.edit_message_text(
+            "Не удалось определить товар."
+        )
+
+        return
+
+    cart = context.user_data.get(
+        "cart",
+        []
+    )
+
+    if item_index >= len(cart):
+        await query.edit_message_text(
+            "Товар уже отсутствует в корзине."
+        )
+
+        return
+
+    removed_item = cart.pop(item_index)
+
+    print(
+        f"Удалён из корзины: "
+        f"{removed_item['name']}",
+        flush=True
+    )
+
+    # Если корзина стала пустой
+    if not cart:
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "← Назад к каталогу",
+                    callback_data="back_categories"
+                )
+            ]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await query.edit_message_text(
+            "🛒 Корзина пуста.",
+            reply_markup=reply_markup,
+        )
+
+        return
+
+    # Показываем обновлённую корзину
+    text = "🛒 Ваша корзина\n\n"
+
+    total = 0
+
+    keyboard = []
+
+    for index, item in enumerate(cart):
+
+        line_total = (
+            item["price"] *
+            item["quantity"]
+        )
+
+        total += line_total
+
+        text += (
+            f"• {item['name']}\n"
+            f"  {item['quantity']} × "
+            f"{format_price(item['price'])} грн = "
+            f"{format_price(line_total)} грн\n\n"
+        )
+
+        keyboard.append([
+            InlineKeyboardButton(
+                f"🗑 Удалить: {item['name']}",
+                callback_data=f"remove_cart:{index}"
+            )
+        ])
+
+    text += (
+        f"Итого: **{format_price(total)} грн**"
+    )
+
+    keyboard.append([
+        InlineKeyboardButton(
+            "🗑 Очистить корзину",
+            callback_data="clear_cart"
+        )
+    ])
+
+    keyboard.append([
+        InlineKeyboardButton(
+            "← Назад к каталогу",
+            callback_data="back_categories"
+        )
+    ])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        text,
+        reply_markup=reply_markup,
+        parse_mode="Markdown",
+    )
+
+async def clear_cart(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+
+    await query.answer("Корзина очищена 🗑")
+
+    context.user_data["cart"] = []
+
+    print(
+        "=== CART CLEARED ===",
+        flush=True
+    )
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "← Назад к каталогу",
+                callback_data="back_categories"
+            )
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        "🛒 Корзина пуста.",
+        reply_markup=reply_markup,
     )
 
 async def back_products(
@@ -897,6 +1066,20 @@ def build_application():
         CallbackQueryHandler(
             back_products,
             pattern=r"^back_products$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            remove_cart_item,
+            pattern=r"^remove_cart:\d+$"
+        )
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(
+            clear_cart,
+            pattern=r"^clear_cart$"
         )
     )
 
