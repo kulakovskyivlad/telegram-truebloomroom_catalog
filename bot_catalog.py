@@ -131,10 +131,11 @@ def load_catalog():
     1. Одинаковые товары объединяются.
     2. Остаток суммируется по всем строкам.
     3. Цена берется из последней строки этого товара.
-    4. Товар показывается только если:
+    4. Категория берется из последней строки этого товара.
+    5. Товар показывается только если:
        - суммарный остаток > 0
        - цена из последней строки > 0
-    5. Остаток клиенту не показываем.
+    6. Остаток клиенту не показываем.
     """
 
     worksheet = get_stock_sheet()
@@ -152,10 +153,11 @@ def load_catalog():
         product_index = headers.index("Товар")
         stock_index = headers.index("Осталось")
         price_index = headers.index("Цена продажи")
+        category_index = headers.index("Категория")
     except ValueError as error:
         raise ValueError(
             f"Не найдена необходимая колонка в листе '{SHEET_NAME}'. "
-            f"Нужны колонки: Товар, Осталось, Цена продажи. "
+            f"Нужны колонки: Товар, Осталось, Цена продажи, Категория. "
             f"Найдено: {headers}"
         ) from error
 
@@ -167,13 +169,15 @@ def load_catalog():
         if len(row) <= max(
             product_index,
             stock_index,
-            price_index
+            price_index,
+            category_index
         ):
             row = row + [""] * (
                 max(
                     product_index,
                     stock_index,
-                    price_index
+                    price_index,
+                    category_index
                 ) + 1 - len(row)
             )
 
@@ -192,6 +196,10 @@ def load_catalog():
             row[price_index]
         )
 
+        category = str(
+            row[category_index]
+        ).strip()
+
         key = normalize_product_name(
             product_name
         )
@@ -201,6 +209,7 @@ def load_catalog():
                 "name": product_name,
                 "stock": 0.0,
                 "price": 0.0,
+                "category": category,
             }
 
         # Остаток суммируем по всем строкам
@@ -211,6 +220,9 @@ def load_catalog():
 
         # Название берем из последней строки
         products[key]["name"] = product_name
+
+        # Категория берем из последней строки
+        products[key]["category"] = category
 
     # Формируем итоговый каталог
     catalog = []
@@ -223,9 +235,13 @@ def load_catalog():
         if product["price"] <= 0:
             continue
 
+        if not product["category"]:
+            continue
+
         catalog.append({
             "name": product["name"],
             "price": product["price"],
+            "category": product["category"],
         })
 
     return catalog
