@@ -458,7 +458,7 @@ async def category_button(
 
     except (ValueError, IndexError):
         await query.edit_message_text(
-            "Не удалось определить категорию."
+            "Не вдалося визначити категорію."
         )
 
         return
@@ -467,7 +467,7 @@ async def category_button(
 
     if not catalog:
         await query.edit_message_text(
-            "Каталог устарел. Нажмите /start и попробуйте снова."
+            "Каталог застарів. Натисніть /start і спробуйте ще раз."
         )
 
         return
@@ -482,7 +482,7 @@ async def category_button(
 
     if category_index >= len(categories):
         await query.edit_message_text(
-            "Категория больше недоступна. Нажмите /start."
+            "Категорія більше недоступна. Натисніть /start."
         )
 
         return
@@ -497,7 +497,7 @@ async def category_button(
 
     if not products:
         await query.edit_message_text(
-            "В этой категории сейчас нет товаров."
+            "У цій категорії зараз немає товарів."
         )
 
         return
@@ -518,7 +518,7 @@ async def category_button(
 
     keyboard.append([
         InlineKeyboardButton(
-            "← Назад к категориям",
+            "← Назад до категорій",
             callback_data="back_categories"
         )
     ])
@@ -527,7 +527,7 @@ async def category_button(
 
     await query.edit_message_text(
         f"🌿 {selected_category}\n\n"
-        "Выберите товар:",
+        "Оберіть товар:",
         reply_markup=reply_markup,
     )
 
