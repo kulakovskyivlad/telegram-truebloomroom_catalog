@@ -25,6 +25,11 @@ from telegram.ext import (
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
+ADMIN_CHAT_IDS = [
+    int(chat_id.strip())
+    for chat_id in os.environ["ADMIN_CHAT_IDS"].split(",")
+    if chat_id.strip()
+]
 
 SHEET_NAME = os.environ.get("SHEET_NAME", "Склад")
 RENDER_EXTERNAL_URL = os.environ["RENDER_EXTERNAL_URL"]
@@ -62,6 +67,69 @@ def get_stock_sheet():
 def get_orders_sheet():
     spreadsheet = get_spreadsheet()
     return spreadsheet.worksheet("Заказы_бот")
+
+async def notify_admins(
+    context: ContextTypes.DEFAULT_TYPE,
+    order_number,
+    cart,
+    customer,
+    telegram_id,
+    telegram_username,
+    telegram_name,
+    order_date,
+):
+    total = 0
+
+    text = (
+        f"🔔 НОВЫЙ ЗАКАЗ №{order_number}\n\n"
+        f"👤 Покупатель: {customer.get('name', '')}\n"
+        f"📞 Телефон: {customer.get('phone', '')}\n"
+        f"📍 Город: {customer.get('city', '')}\n\n"
+        f"💬 Telegram:\n"
+        f"ID: {telegram_id}\n"
+        f"Username: {telegram_username or 'нет'}\n"
+        f"Имя: {telegram_name}\n\n"
+        f"🛒 Товары:\n"
+    )
+
+    for item in cart:
+        quantity = item["quantity"]
+        price = item["price"]
+        line_total = quantity * price
+
+        total += line_total
+
+        text += (
+            f"• {item['name']}\n"
+            f"  {quantity} × "
+            f"{format_price(price)} грн = "
+            f"{format_price(line_total)} грн\n"
+        )
+
+    text += (
+        f"\n💰 Итого: {format_price(total)} грн\n"
+        f"📅 {order_date}"
+    )
+
+    for chat_id in ADMIN_CHAT_IDS:
+        try:
+            await context.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+            )
+
+            print(
+                f"Уведомление отправлено: {chat_id}",
+                flush=True
+            )
+
+        except Exception as error:
+            print(
+                f"ОШИБКА ОТПРАВКИ УВЕДОМЛЕНИЯ "
+                f"{chat_id}: "
+                f"{type(error).__name__}: {error}",
+                flush=True
+            )
 
 def get_next_order_number():
     worksheet = get_orders_sheet()
@@ -1236,6 +1304,18 @@ async def confirm_order(
         print(
             f"Cart: {cart}",
             flush=True
+        )
+
+        # Отправляем уведомление администраторам
+        await notify_admins(
+            context=context,
+            order_number=order_number,
+            cart=cart,
+            customer=customer,
+            telegram_id=telegram_id,
+            telegram_username=telegram_username,
+            telegram_name=telegram_name,
+            order_date=order_date,
         )
 
         # Очищаем корзину после успешной записи
