@@ -382,7 +382,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(
-            "Не удалось загрузить каталог. Попробуйте еще раз позже."
+            "Не вдалося завантажити каталог. Спробуйте ще раз пізніше."
         )
 
         return
@@ -391,7 +391,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("Каталог пустой", flush=True)
 
         await update.message.reply_text(
-            "Сейчас в каталоге нет доступных товаров."
+            "Зараз у каталозі немає доступних товарів."
         )
 
         return
@@ -422,7 +422,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Кнопка корзины
     keyboard.append([
         InlineKeyboardButton(
-            "🛒 Корзина",
+            "🛒 Кошик",
             callback_data="show_cart"
         )
     ])
@@ -430,7 +430,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "🌿 Каталог\n\nВыберите категорию:",
+        "🌿 Каталог\n\nОберіть категорію:",
         reply_markup=reply_markup,
     )
 
