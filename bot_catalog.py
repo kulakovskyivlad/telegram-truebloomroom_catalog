@@ -303,6 +303,14 @@ def load_catalog():
             row[price_index]
         )
 
+        if product_name in [
+            "Катана для корней",
+            "Катана для цветения",
+            "Катана Start",
+            "Катана Zenzym",
+        ]:
+            price *= 30
+
         category = str(
             row[category_index]
         ).strip()
