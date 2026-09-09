@@ -309,7 +309,7 @@ def load_catalog():
             "Катана Start",
             "Катана Zenzym",
         ]:
-            price *= 30
+            price = round(price * 30)
 
         category = str(
             row[category_index]
