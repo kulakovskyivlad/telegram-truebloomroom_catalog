@@ -1306,17 +1306,26 @@ async def confirm_order(
             flush=True
         )
 
-        # Отправляем уведомление администраторам
-        await notify_admins(
-            context=context,
-            order_number=order_number,
-            cart=cart,
-            customer=customer,
-            telegram_id=telegram_id,
-            telegram_username=telegram_username,
-            telegram_name=telegram_name,
-            order_date=order_date,
-        )
+        # Отправляем уведомление администраторам.
+        # Ошибка уведомления НЕ должна отменять заказ.
+        try:
+            await notify_admins(
+                context=context,
+                order_number=order_number,
+                cart=cart,
+                customer=customer,
+                telegram_id=telegram_id,
+                telegram_username=telegram_username,
+                telegram_name=telegram_name,
+                order_date=order_date,
+            )
+
+        except Exception as error:
+            print(
+                f"=== ADMIN NOTIFICATION ERROR: "
+                f"{type(error).__name__}: {error}",
+                flush=True
+            )
 
         # Очищаем корзину после успешной записи
         context.user_data["cart"] = []
@@ -1337,6 +1346,7 @@ async def confirm_order(
             keyboard
         )
 
+        # Сообщение клиенту
         await query.edit_message_text(
             f"✅ Заказ №{order_number} успешно оформлен!\n\n"
             "Спасибо за заказ 🌿\n"
