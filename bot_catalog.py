@@ -64,6 +64,10 @@ def get_stock_sheet():
     spreadsheet = get_spreadsheet()
     return spreadsheet.worksheet(SHEET_NAME)
 
+def get_flowers_sheet():
+    spreadsheet = get_spreadsheet()
+    return spreadsheet.worksheet("Цветы")
+
 def get_orders_sheet():
     spreadsheet = get_spreadsheet()
     return spreadsheet.worksheet("Заказы_бот")
@@ -361,6 +365,86 @@ def load_catalog():
             "original_name": product["name"],
             "price": product["price"],
             "category": product["category"],
+        })
+
+    return catalog
+
+def load_flowers_catalog():
+    worksheet = get_flowers_sheet()
+    values = worksheet.get_all_values()
+
+    if len(values) < 3:
+        return []
+
+    headers = values[1]
+    rows = values[2:]
+
+    variety_index = headers.index("Сорт")
+    stock_index = headers.index("Остаток")
+    price_index = headers.index("Цена продажи")
+    category_index = headers.index("Категория")
+    catalog_product_index = headers.index("Товар для каталога")
+
+    flowers = {}
+
+    for row in rows:
+        if len(row) <= max(
+            variety_index,
+            stock_index,
+            price_index,
+            category_index,
+            catalog_product_index,
+        ):
+            continue
+
+        variety = str(row[variety_index]).strip()
+
+        if not variety:
+            continue
+
+        catalog_name = str(row[catalog_product_index]).strip()
+
+        if not catalog_name:
+            catalog_name = variety
+
+        stock = parse_number(row[stock_index])
+        price = parse_number(row[price_index])
+        category = str(row[category_index]).strip()
+
+        key = normalize_product_name(variety)
+
+        if key not in flowers:
+            flowers[key] = {
+                "name": variety,
+                "catalog_name": catalog_name,
+                "stock": 0.0,
+                "price": 0.0,
+                "category": category,
+            }
+
+        flowers[key]["stock"] += stock
+        flowers[key]["price"] = price
+        flowers[key]["name"] = variety
+        flowers[key]["catalog_name"] = catalog_name
+        flowers[key]["category"] = category
+
+    catalog = []
+
+    for flower in flowers.values():
+        if flower["stock"] <= 0:
+            continue
+
+        if flower["price"] <= 0:
+            continue
+
+        if not flower["category"]:
+            continue
+
+        catalog.append({
+            "name": flower["catalog_name"],
+            "original_name": flower["name"],
+            "price": flower["price"],
+            "category": flower["category"],
         })
 
     return catalog
