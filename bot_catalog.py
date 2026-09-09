@@ -367,6 +367,9 @@ def load_catalog():
             "category": product["category"],
         })
 
+    flowers_catalog = load_flowers_catalog()
+    catalog.extend(flowers_catalog)
+
     return catalog
 
 def load_flowers_catalog():
