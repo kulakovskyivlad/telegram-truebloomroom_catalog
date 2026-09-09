@@ -553,7 +553,7 @@ async def product_button(
 
     except (ValueError, IndexError):
         await query.edit_message_text(
-            "Не удалось определить товар."
+            "Не вдалося визначити товар."
         )
 
         return
@@ -564,14 +564,14 @@ async def product_button(
 
     if not products:
         await query.edit_message_text(
-            "Список товаров устарел. Нажмите /start."
+            "Список товарів застарів. Натисніть /start."
         )
 
         return
 
     if product_index >= len(products):
         await query.edit_message_text(
-            "Этот товар больше недоступен. Нажмите /start."
+            "Цей товар більше недоступний. Натисніть /start."
         )
 
         return
@@ -601,13 +601,13 @@ async def product_button(
         ],
         [
             InlineKeyboardButton(
-                "🛒 Добавить в корзину",
+                "🛒 Додати до кошика",
                 callback_data="add_to_cart"
             )
         ],
         [
             InlineKeyboardButton(
-                "← Назад к товарам",
+                "← Назад до товарів",
                 callback_data="back_products"
             )
         ],
@@ -617,8 +617,8 @@ async def product_button(
 
     await query.edit_message_text(
         f"🌿 {product['name']}\n\n"
-        f"Цена: {format_price(product['price'])} грн\n\n"
-        "Выберите количество:",
+        f"Ціна: {format_price(product['price'])} грн\n\n"
+        "Оберіть кількість:",
         reply_markup=reply_markup,
     )
 
@@ -641,7 +641,7 @@ async def quantity_button(
 
     if not product:
         await query.edit_message_text(
-            "Товар не выбран. Нажмите /start."
+            "Товар не вибрано. Натисніть /start."
         )
 
         return
@@ -676,13 +676,13 @@ async def quantity_button(
         ],
         [
             InlineKeyboardButton(
-                "🛒 Добавить в корзину",
+                "🛒 Додати до кошика",
                 callback_data="add_to_cart"
             )
         ],
         [
             InlineKeyboardButton(
-                "← Назад к товарам",
+                "← Назад до товарів",
                 callback_data="back_products"
             )
         ],
@@ -700,7 +700,7 @@ async def add_to_cart(
 ):
     query = update.callback_query
 
-    await query.answer("Добавлено в корзину ✅")
+    await query.answer("Додано до кошика ✅")
 
     product = context.user_data.get(
         "selected_product"
@@ -713,7 +713,7 @@ async def add_to_cart(
 
     if not product:
         await query.edit_message_text(
-            "Товар не выбран. Нажмите /start."
+            "Товар не вибрано. Натисніть /start."
         )
 
         return
@@ -743,13 +743,13 @@ async def add_to_cart(
     keyboard = [
         [
             InlineKeyboardButton(
-                "🛒 Перейти в корзину",
+                "🛒 Перейти до кошика",
                 callback_data="show_cart"
             )
         ],
         [
             InlineKeyboardButton(
-                "← Назад к товарам",
+                "← Назад до товарів",
                 callback_data="back_products"
             )
         ],
@@ -758,10 +758,10 @@ async def add_to_cart(
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        f"✅ Добавлено в корзину\n\n"
+        f"✅ Додано до кошика\n\n"
         f"{product['name']}\n"
-        f"Количество: {quantity}\n"
-        f"Цена: {format_price(product['price'])} грн",
+        f"Кількість: {quantity}\n"
+        f"Ціна: {format_price(product['price'])} грн",
         reply_markup=reply_markup,
     )
 
@@ -789,7 +789,7 @@ async def show_cart(
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "← Назад к каталогу",
+                    "← Назад до каталогу",
                     callback_data="back_categories"
                 )
             ]
@@ -798,13 +798,13 @@ async def show_cart(
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.edit_message_text(
-            "🛒 Корзина пуста.",
+            "🛒 Кошик порожній.",
             reply_markup=reply_markup,
         )
 
         return
 
-    text = "🛒 Ваша корзина\n\n"
+    text = "🛒 Ваш кошик\n\n"
 
     total = 0
 
@@ -829,18 +829,18 @@ async def show_cart(
         # Кнопка удаления конкретного товара
         keyboard.append([
             InlineKeyboardButton(
-                f"🗑 Удалить: {item['name']}",
+                f"🗑 Видалити: {item['name']}",
                 callback_data=f"remove_cart:{index}"
             )
         ])
 
     text += (
-        f"Итого: **{format_price(total)} грн**"
+        f"Разом: **{format_price(total)} грн**"
     )
 
     keyboard.append([
         InlineKeyboardButton(
-            "🛍 Оформить заказ",
+            "🛍 Оформити замовлення",
             callback_data="checkout"
         )
     ])
@@ -848,7 +848,7 @@ async def show_cart(
     # Кнопка полной очистки корзины
     keyboard.append([
         InlineKeyboardButton(
-            "🗑 Очистить корзину",
+            "🗑 Очистити кошик",
             callback_data="clear_cart"
         )
     ])
@@ -856,7 +856,7 @@ async def show_cart(
     # Возврат к каталогу
     keyboard.append([
         InlineKeyboardButton(
-            "← Назад к каталогу",
+            "← Назад до каталогу",
             callback_data="back_categories"
         )
     ])
@@ -875,7 +875,7 @@ async def remove_cart_item(
 ):
     query = update.callback_query
 
-    await query.answer("Товар удалён 🗑")
+    await query.answer("Товар видалено 🗑")
 
     try:
         item_index = int(
@@ -884,7 +884,7 @@ async def remove_cart_item(
 
     except (ValueError, IndexError):
         await query.edit_message_text(
-            "Не удалось определить товар."
+            "Не вдалося визначити товар."
         )
 
         return
@@ -896,7 +896,7 @@ async def remove_cart_item(
 
     if item_index >= len(cart):
         await query.edit_message_text(
-            "Товар уже отсутствует в корзине."
+            "Товар уже відсутній у кошику."
         )
 
         return
@@ -914,7 +914,7 @@ async def remove_cart_item(
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "← Назад к каталогу",
+                    "← Назад до каталогу",
                     callback_data="back_categories"
                 )
             ]
@@ -923,14 +923,14 @@ async def remove_cart_item(
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         await query.edit_message_text(
-            "🛒 Корзина пуста.",
+            "🛒 Кошик порожній.",
             reply_markup=reply_markup,
         )
 
         return
 
     # Показываем обновлённую корзину
-    text = "🛒 Ваша корзина\n\n"
+    text = "🛒 Ваш кошик\n\n"
 
     total = 0
 
@@ -954,32 +954,32 @@ async def remove_cart_item(
 
         keyboard.append([
             InlineKeyboardButton(
-                f"🗑 Удалить: {item['name']}",
+                f"🗑 Видалити: {item['name']}",
                 callback_data=f"remove_cart:{index}"
             )
         ])
 
     text += (
-        f"Итого: **{format_price(total)} грн**"
+        f"Разом: **{format_price(total)} грн**"
     )
 
     keyboard.append([
         InlineKeyboardButton(
-            "🛍 Оформить заказ",
+            "🛍 Оформити замовлення",
             callback_data="checkout"
         )
     ])
 
     keyboard.append([
         InlineKeyboardButton(
-            "🗑 Очистить корзину",
+            "🗑 Очистити кошик",
             callback_data="clear_cart"
         )
     ])
 
     keyboard.append([
         InlineKeyboardButton(
-            "← Назад к каталогу",
+            "← Назад до каталогу",
             callback_data="back_categories"
         )
     ])
@@ -998,7 +998,7 @@ async def clear_cart(
 ):
     query = update.callback_query
 
-    await query.answer("Корзина очищена 🗑")
+    await query.answer("Кошик очищено 🗑")
 
     context.user_data["cart"] = []
 
@@ -1010,7 +1010,7 @@ async def clear_cart(
     keyboard = [
         [
             InlineKeyboardButton(
-                "← Назад к каталогу",
+                "← Назад до каталогу",
                 callback_data="back_categories"
             )
         ]
@@ -1019,7 +1019,7 @@ async def clear_cart(
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "🛒 Корзина пуста.",
+        "🛒 Кошик порожній.",
         reply_markup=reply_markup,
     )
 
@@ -1038,7 +1038,7 @@ async def checkout(
 
     if not cart:
         await query.edit_message_text(
-            "🛒 Корзина пуста."
+            "🛒 Кошик порожній."
         )
 
         return
@@ -1048,8 +1048,8 @@ async def checkout(
     context.user_data["customer"] = {}
 
     await query.edit_message_text(
-        "📝 Оформление заказа\n\n"
-        "Как вас зовут?"
+        "📝 Оформлення замовлення\n\n"
+        "Як вас звати?"
     )
 
     print(
@@ -1089,7 +1089,7 @@ async def checkout_message(
         context.user_data["checkout_step"] = "phone"
 
         await update.message.reply_text(
-            "📞 Укажите номер телефона:"
+            "📞 Вкажіть номер телефону:"
         )
 
         return
@@ -1105,7 +1105,7 @@ async def checkout_message(
         context.user_data["checkout_step"] = "city"
 
         await update.message.reply_text(
-            "📍 Укажите город:"
+            "📍 Вкажіть місто:"
         )
 
         return
@@ -1143,13 +1143,13 @@ async def show_order_confirmation(
 
     if not cart:
         await update.message.reply_text(
-            "🛒 Корзина пуста."
+            "🛒 Кошик порожній."
         )
 
         return
 
     text = (
-        "📝 Проверьте заказ\n\n"
+        "📝 Перевірте замовлення\n\n"
         f"👤 {customer.get('name', '')}\n"
         f"📞 {customer.get('phone', '')}\n"
         f"📍 {customer.get('city', '')}\n\n"
@@ -1174,25 +1174,25 @@ async def show_order_confirmation(
         )
 
     text += (
-        f"Итого: **{format_price(total)} грн**"
+        f"Разом: **{format_price(total)} грн**"
     )
 
     keyboard = [
         [
             InlineKeyboardButton(
-                "✅ Подтвердить заказ",
+                "✅ Підтвердити замовлення",
                 callback_data="confirm_order"
             )
         ],
         [
             InlineKeyboardButton(
-                "✏️ Изменить данные",
+                "✏️ Змінити дані",
                 callback_data="edit_customer"
             )
         ],
         [
             InlineKeyboardButton(
-                "❌ Отменить",
+                "❌ Скасувати",
                 callback_data="cancel_checkout"
             )
         ],
@@ -1228,7 +1228,7 @@ async def confirm_order(
 
     if not cart:
         await query.edit_message_text(
-            "🛒 Корзина пуста."
+            "🛒 Кошик порожній."
         )
 
         return
@@ -1348,7 +1348,7 @@ async def confirm_order(
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "← Вернуться в каталог",
+                    "← Повернутися до каталогу",
                     callback_data="back_categories"
                 )
             ]
@@ -1360,10 +1360,10 @@ async def confirm_order(
 
         # Сообщение клиенту
         await query.edit_message_text(
-            f"✅ Заказ №{order_number} успешно оформлен!\n\n"
-            "Спасибо за заказ 🌿\n"
-            "Мы свяжемся с вами для подтверждения "
-            "наличия товаров.",
+            f"✅ Замовлення №{order_number} успішно оформлено!\n\n"
+            "Дякуємо за замовлення 🌿\n"
+            "Ми зв'яжемося з вами для підтвердження "
+            "наявності товарів.",
             reply_markup=reply_markup,
         )
 
@@ -1376,8 +1376,8 @@ async def confirm_order(
         )
 
         await query.edit_message_text(
-            "❌ Не удалось оформить заказ.\n\n"
-            "Попробуйте ещё раз немного позже."
+            "❌ Не вдалося оформити замовлення.\n\n"
+            "Спробуйте ще раз трохи пізніше."
         )
 
 async def cancel_checkout(
@@ -1395,7 +1395,7 @@ async def cancel_checkout(
 
     if not catalog:
         await query.edit_message_text(
-            "Каталог устарел. Нажмите /start и попробуйте снова."
+            "Каталог застарів. Натисніть /start і спробуйте ще раз."
         )
 
         return
@@ -1420,7 +1420,7 @@ async def cancel_checkout(
 
     keyboard.append([
         InlineKeyboardButton(
-            "🛒 Корзина",
+            "🛒 Кошик",
             callback_data="show_cart"
         )
     ])
@@ -1428,9 +1428,9 @@ async def cancel_checkout(
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "❌ Оформление заказа отменено.\n\n"
+        "❌ Оформлення замовлення скасовано.\n\n"
         "🌿 Каталог\n\n"
-        "Выберите категорию:",
+        "Оберіть категорію:",
         reply_markup=reply_markup,
     )
 
@@ -1451,7 +1451,7 @@ async def edit_customer(
     context.user_data["customer"] = {}
 
     await query.edit_message_text(
-        "📝 Введите имя заново:"
+        "📝 Введіть ім'я ще раз:"
     )
 
 async def back_products(
@@ -1468,7 +1468,7 @@ async def back_products(
 
     if not products:
         await query.edit_message_text(
-            "Список товаров устарел. Нажмите /start."
+            "Список товарів застарів. Натисніть /start."
         )
 
         return
@@ -1486,7 +1486,7 @@ async def back_products(
 
     keyboard.append([
         InlineKeyboardButton(
-            "← Назад к категориям",
+            "← Назад до категорій",
             callback_data="back_categories"
         )
     ])
@@ -1498,7 +1498,7 @@ async def back_products(
 
     await query.edit_message_text(
         f"🌿 {category}\n\n"
-        "Выберите товар:",
+        "Оберіть товар:",
         reply_markup=reply_markup,
     )
 
@@ -1514,7 +1514,7 @@ async def back_categories(
 
     if not catalog:
         await query.edit_message_text(
-            "Каталог устарел. Нажмите /start и попробуйте снова."
+            "Каталог застарів. Натисніть /start і спробуйте ще раз."
         )
 
         return
@@ -1540,7 +1540,7 @@ async def back_categories(
     # Корзина также доступна после возврата к категориям
     keyboard.append([
         InlineKeyboardButton(
-            "🛒 Корзина",
+            "🛒 Кошик",
             callback_data="show_cart"
         )
     ])
@@ -1548,7 +1548,7 @@ async def back_categories(
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await query.edit_message_text(
-        "🌿 Каталог\n\nВыберите категорию:",
+        "🌿 Каталог\n\nОберіть категорію:",
         reply_markup=reply_markup,
     )
 
