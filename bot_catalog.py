@@ -250,6 +250,7 @@ def load_catalog():
     # Определяем номера нужных колонок
     try:
         product_index = headers.index("Товар")
+        catalog_product_index = headers.index("Товар для каталога")
         stock_index = headers.index("Осталось")
         price_index = headers.index("Цена продажи")
         category_index = headers.index("Категория")
@@ -284,8 +285,15 @@ def load_catalog():
             row[product_index]
         ).strip()
 
+        catalog_product_name = str(
+            row[catalog_product_index]
+        ).strip()
+
         if not product_name:
             continue
+
+        if not catalog_product_name:
+            catalog_product_name = product_name
 
         stock = parse_number(
             row[stock_index]
@@ -306,6 +314,7 @@ def load_catalog():
         if key not in products:
             products[key] = {
                 "name": product_name,
+                "catalog_name": catalog_product_name,
                 "stock": 0.0,
                 "price": 0.0,
                 "category": category,
@@ -319,6 +328,8 @@ def load_catalog():
 
         # Название берем из последней строки
         products[key]["name"] = product_name
+
+        products[key]["catalog_name"] = catalog_product_name
 
         # Категория берем из последней строки
         products[key]["category"] = category
@@ -338,7 +349,8 @@ def load_catalog():
             continue
 
         catalog.append({
-            "name": product["name"],
+            "name": product["catalog_name"],
+            "original_name": product["name"],
             "price": product["price"],
             "category": product["category"],
         })
