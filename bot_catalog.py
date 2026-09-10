@@ -447,8 +447,18 @@ def load_flowers_catalog():
             price_index,
             category_index,
             catalog_product_index,
+            photo_index,
         ):
-            continue
+            row = row + [""] * (
+                max(
+                    variety_index,
+                    stock_index,
+                    price_index,
+                    category_index,
+                    catalog_product_index,
+                    photo_index,
+                ) + 1 - len(row)
+            )
 
         variety = str(row[variety_index]).strip()
 
