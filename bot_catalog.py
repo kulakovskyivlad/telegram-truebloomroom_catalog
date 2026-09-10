@@ -1048,7 +1048,12 @@ async def show_cart(
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.edit_message_text(
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+
+        await query.message.chat.send_message(
             "🛒 Кошик порожній.",
             reply_markup=reply_markup,
         )
@@ -1114,7 +1119,12 @@ async def show_cart(
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+
+    await query.message.chat.send_message(
         text,
         reply_markup=reply_markup,
         parse_mode="Markdown",
