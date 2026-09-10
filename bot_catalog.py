@@ -995,13 +995,26 @@ async def add_to_cart(
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(
-        f"✅ Додано до кошика\n\n"
-        f"{product['name']}\n"
-        f"Кількість: {quantity}\n"
-        f"Ціна: {format_price(product['price'])} грн",
-        reply_markup=reply_markup,
-    )
+    photo_url = product.get("photo", "")
+
+    if query.message.photo:
+        await query.message.edit_caption(
+            caption=(
+                f"✅ Додано до кошика\n\n"
+                f"{product['name']}\n"
+                f"Кількість: {quantity}\n"
+                f"Ціна: {format_price(product['price'])} грн"
+            ),
+            reply_markup=reply_markup,
+        )
+    else:
+        await query.edit_message_text(
+            f"✅ Додано до кошика\n\n"
+            f"{product['name']}\n"
+            f"Кількість: {quantity}\n"
+            f"Ціна: {format_price(product['price'])} грн",
+            reply_markup=reply_markup,
+        )
 
     print(
         f"Добавлено в корзину: "
