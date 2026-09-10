@@ -863,8 +863,6 @@ async def product_button(
         if photo:
             photo.name = "product.jpg"
 
-            await query.message.delete()
-
             await query.message.chat.send_photo(
                 photo=photo,
                 caption=(
