@@ -441,24 +441,7 @@ def load_flowers_catalog():
     flowers = {}
 
     for row in rows:
-        if len(row) <= max(
-            variety_index,
-            stock_index,
-            price_index,
-            category_index,
-            catalog_product_index,
-            photo_index,
-        ):
-            row = row + [""] * (
-                max(
-                    variety_index,
-                    stock_index,
-                    price_index,
-                    category_index,
-                    catalog_product_index,
-                    photo_index,
-                ) + 1 - len(row)
-            )
+        row = row + [""] * (len(headers) - len(row))
 
         variety = str(row[variety_index]).strip()
 
