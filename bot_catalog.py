@@ -701,7 +701,7 @@ async def category_button(
             if photo:
                 photo.name = "product.jpg"
 
-                await query.message.chat.send_photo(
+                sent_message = await query.message.chat.send_photo(
                     photo=photo,
                     caption=(
                         f"🌿 {product['name']}\n\n"
@@ -710,21 +710,36 @@ async def category_button(
                     reply_markup=reply_markup,
                 )
 
+                context.user_data.setdefault(
+                    "category_message_ids",
+                    []
+                ).append(sent_message.message_id)
+
             else:
                 # Если фото не загрузилось — показываем товар без фото
-                await query.message.chat.send_message(
+                sent_message = await query.message.chat.send_message(
                     f"🌿 {product['name']}\n\n"
                     f"Ціна: {format_price(product['price'])} грн",
                     reply_markup=reply_markup,
                 )
 
+                context.user_data.setdefault(
+                    "category_message_ids",
+                    []
+                ).append(sent_message.message_id)
+
         else:
             # Если фото в таблице не указано
-            await query.message.chat.send_message(
-                f"🌿 {product['name']}\n\n"
-                f"Ціна: {format_price(product['price'])} грн",
-                reply_markup=reply_markup,
-            )
+                sent_message = await query.message.chat.send_message(
+                    f"🌿 {product['name']}\n\n"
+                    f"Ціна: {format_price(product['price'])} грн",
+                    reply_markup=reply_markup,
+                )
+
+                context.user_data.setdefault(
+                    "category_message_ids",
+                    []
+                ).append(sent_message.message_id)
 
     # Кнопка возврата к категориям
     await query.message.chat.send_message(
@@ -751,6 +766,20 @@ async def product_button(
     query = update.callback_query
 
     await query.answer()
+    message_ids = context.user_data.get(
+        "category_message_ids",
+        []
+    )
+
+    for message_id in message_ids:
+        try:
+            await query.message.chat.delete_message(
+                message_id
+            )
+        except Exception:
+            pass
+
+    context.user_data["category_message_ids"] = []
 
     print("=== PRODUCT BUTTON ===", flush=True)
 
@@ -1750,6 +1779,7 @@ async def back_products(
     )
 
     # Показываем товары категории
+    context.user_data["category_message_ids"] = []
     for index, product in enumerate(products):
 
         keyboard = [
