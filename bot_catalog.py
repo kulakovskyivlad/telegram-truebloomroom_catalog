@@ -511,6 +511,7 @@ def load_flowers_catalog():
             "original_name": flower["name"],
             "price": flower["price"],
             "category": flower["category"],
+            "photo": flower["photo"],
         })
 
     return catalog
