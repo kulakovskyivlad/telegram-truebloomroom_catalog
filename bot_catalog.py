@@ -1809,9 +1809,13 @@ async def back_products(
     category = products[0]["category"]
 
     # Заголовок категории
-    await query.message.chat.send_message(
+    header_message = await query.message.chat.send_message(
         f"🌿 {category}\n\n"
         "Оберіть товар:"
+    )
+
+    context.user_data["category_header_message_id"] = (
+        header_message.message_id
     )
 
     # Показываем товары категории
@@ -1842,7 +1846,7 @@ async def back_products(
             if photo:
                 photo.name = "product.jpg"
 
-                await query.message.chat.send_photo(
+                sent_message = await query.message.chat.send_photo(
                     photo=photo,
                     caption=(
                         f"🌿 {product['name']}\n\n"
@@ -1852,24 +1856,36 @@ async def back_products(
                     reply_markup=reply_markup,
                 )
 
+                context.user_data["category_message_ids"].append(
+                    sent_message.message_id
+                )
+
             else:
-                await query.message.chat.send_message(
+                sent_message = await query.message.chat.send_message(
                     f"🌿 {product['name']}\n\n"
                     f"Ціна: "
                     f"{format_price(product['price'])} грн",
                     reply_markup=reply_markup,
                 )
 
+                context.user_data["category_message_ids"].append(
+                    sent_message.message_id
+                )
+
         else:
-            await query.message.chat.send_message(
+            sent_message = await query.message.chat.send_message(
                 f"🌿 {product['name']}\n\n"
                 f"Ціна: "
                 f"{format_price(product['price'])} грн",
                 reply_markup=reply_markup,
             )
 
+            context.user_data["category_message_ids"].append(
+                sent_message.message_id
+            )
+
     # Кнопка возврата к категориям
-    await query.message.chat.send_message(
+    back_message = await query.message.chat.send_message(
         "Оберіть дію:",
         reply_markup=InlineKeyboardMarkup([
             [
@@ -1879,6 +1895,10 @@ async def back_products(
                 )
             ]
         ])
+    )
+
+    context.user_data["category_back_message_id"] = (
+        back_message.message_id
     )
 
 async def back_categories(
