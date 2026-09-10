@@ -306,6 +306,7 @@ def load_catalog():
         stock_index = headers.index("Осталось")
         price_index = headers.index("Цена продажи")
         category_index = headers.index("Категория")
+        photo_index = headers.index("Фото")
     except ValueError as error:
         raise ValueError(
             f"Не найдена необходимая колонка в листе '{SHEET_NAME}'. "
@@ -322,14 +323,18 @@ def load_catalog():
             product_index,
             stock_index,
             price_index,
-            category_index
+            category_index,
+            catalog_product_index,
+            photo_index
         ):
             row = row + [""] * (
                 max(
                     product_index,
                     stock_index,
                     price_index,
-                    category_index
+                    category_index,
+                    catalog_product_index,
+                    photo_index
                 ) + 1 - len(row)
             )
 
@@ -367,6 +372,10 @@ def load_catalog():
             row[category_index]
         ).strip()
 
+        photo = str(
+            row[photo_index]
+        ).strip()
+
         key = normalize_product_name(
             product_name
         )
@@ -378,6 +387,7 @@ def load_catalog():
                 "stock": 0.0,
                 "price": 0.0,
                 "category": category,
+                "photo": photo,
             }
 
         # Остаток суммируем по всем строкам
@@ -393,6 +403,9 @@ def load_catalog():
 
         # Категория берем из последней строки
         products[key]["category"] = category
+        
+        # Фото берем из последней строки
+        products[key]["photo"] = photo
 
     # Формируем итоговый каталог
     catalog = []
@@ -413,7 +426,7 @@ def load_catalog():
             "original_name": product["name"],
             "price": product["price"],
             "category": product["category"],
-            "photo": flower["photo"],
+            "photo": product["photo"],
         })
 
     flowers_catalog = load_flowers_catalog()
