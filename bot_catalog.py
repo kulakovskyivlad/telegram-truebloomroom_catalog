@@ -1711,33 +1711,85 @@ async def back_products(
 
         return
 
-    keyboard = []
-
-    for index, product in enumerate(products):
-        keyboard.append([
-            InlineKeyboardButton(
-                f"{product['name']} — "
-                f"{format_price(product['price'])} грн",
-                callback_data=f"product:{index}"
-            )
-        ])
-
-    keyboard.append([
-        InlineKeyboardButton(
-            "← Назад до категорій",
-            callback_data="back_categories"
-        )
-    ])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    # Удаляем текущую карточку товара
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
 
     # Получаем категорию из первого товара
     category = products[0]["category"]
 
-    await query.edit_message_text(
+    # Заголовок категории
+    await query.message.chat.send_message(
         f"🌿 {category}\n\n"
-        "Оберіть товар:",
-        reply_markup=reply_markup,
+        "Оберіть товар:"
+    )
+
+    # Показываем товары категории
+    for index, product in enumerate(products):
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Обрати товар",
+                    callback_data=f"product:{index}"
+                )
+            ]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(
+            keyboard
+        )
+
+        photo_url = product.get("photo", "")
+
+        if photo_url:
+            photo = await asyncio.to_thread(
+                download_drive_photo,
+                photo_url,
+            )
+
+            if photo:
+                photo.name = "product.jpg"
+
+                await query.message.chat.send_photo(
+                    photo=photo,
+                    caption=(
+                        f"🌿 {product['name']}\n\n"
+                        f"Ціна: "
+                        f"{format_price(product['price'])} грн"
+                    ),
+                    reply_markup=reply_markup,
+                )
+
+            else:
+                await query.message.chat.send_message(
+                    f"🌿 {product['name']}\n\n"
+                    f"Ціна: "
+                    f"{format_price(product['price'])} грн",
+                    reply_markup=reply_markup,
+                )
+
+        else:
+            await query.message.chat.send_message(
+                f"🌿 {product['name']}\n\n"
+                f"Ціна: "
+                f"{format_price(product['price'])} грн",
+                reply_markup=reply_markup,
+            )
+
+    # Кнопка возврата к категориям
+    await query.message.chat.send_message(
+        "Оберіть дію:",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "← Назад до категорій",
+                    callback_data="back_categories"
+                )
+            ]
+        ])
     )
 
 async def back_categories(
