@@ -518,10 +518,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     except Exception as error:
+        import traceback
+
         print(
             f"ОШИБКА ЗАГРУЗКИ КАТАЛОГА: {type(error).__name__}: {error}",
             flush=True
         )
+
+        traceback.print_exc()
 
         await update.message.reply_text(
             "Не вдалося завантажити каталог. Спробуйте ще раз пізніше."
