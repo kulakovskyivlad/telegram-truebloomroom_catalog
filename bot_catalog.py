@@ -911,14 +911,14 @@ async def product_button(
                 reply_markup=reply_markup,
             )
         else:
-            await query.edit_message_text(
+            await query.message.chat.send_message(
                 f"🌿 {product['name']}\n\n"
                 f"Ціна: {format_price(product['price'])} грн\n\n"
                 "Оберіть кількість:",
                 reply_markup=reply_markup,
             )
     else:
-        await query.edit_message_text(
+        await query.message.chat.send_message(
             f"🌿 {product['name']}\n\n"
             f"Ціна: {format_price(product['price'])} грн\n\n"
             "Оберіть кількість:",
