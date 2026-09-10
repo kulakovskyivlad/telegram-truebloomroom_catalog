@@ -664,30 +664,79 @@ async def category_button(
     # Сохраняем товары выбранной категории
     context.user_data["category_products"] = products
 
-    keyboard = []
+    # Удаляем старое сообщение с категориями
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
 
-    for index, product in enumerate(products):
-        keyboard.append([
-            InlineKeyboardButton(
-                f"{product['name']} — "
-                f"{format_price(product['price'])} грн",
-                callback_data=f"product:{index}"
-            )
-        ])
-
-    keyboard.append([
-        InlineKeyboardButton(
-            "← Назад до категорій",
-            callback_data="back_categories"
-        )
-    ])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await query.edit_message_text(
+    # Заголовок категории
+    await query.message.chat.send_message(
         f"🌿 {selected_category}\n\n"
-        "Оберіть товар:",
-        reply_markup=reply_markup,
+        "Оберіть товар:"
+    )
+
+    # Показываем каждый товар отдельным сообщением
+    for index, product in enumerate(products):
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Обрати товар",
+                    callback_data=f"product:{index}"
+                )
+            ]
+        ]
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        photo_url = product.get("photo", "")
+
+        if photo_url:
+            photo = await asyncio.to_thread(
+                download_drive_photo,
+                photo_url,
+            )
+
+            if photo:
+                photo.name = "product.jpg"
+
+                await query.message.chat.send_photo(
+                    photo=photo,
+                    caption=(
+                        f"🌿 {product['name']}\n\n"
+                        f"Ціна: {format_price(product['price'])} грн"
+                    ),
+                    reply_markup=reply_markup,
+                )
+
+            else:
+                # Если фото не загрузилось — показываем товар без фото
+                await query.message.chat.send_message(
+                    f"🌿 {product['name']}\n\n"
+                    f"Ціна: {format_price(product['price'])} грн",
+                    reply_markup=reply_markup,
+                )
+
+        else:
+            # Если фото в таблице не указано
+            await query.message.chat.send_message(
+                f"🌿 {product['name']}\n\n"
+                f"Ціна: {format_price(product['price'])} грн",
+                reply_markup=reply_markup,
+            )
+
+    # Кнопка возврата к категориям
+    await query.message.chat.send_message(
+        "Оберіть дію:",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton(
+                    "← Назад до категорій",
+                    callback_data="back_categories"
+                )
+            ]
+        ])
     )
 
     print(
