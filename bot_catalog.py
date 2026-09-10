@@ -664,6 +664,10 @@ async def category_button(
     # Сохраняем товары выбранной категории
     context.user_data["category_products"] = products
 
+    context.user_data["category_message_ids"] = []
+    context.user_data["category_header_message_id"] = None
+    context.user_data["category_back_message_id"] = None
+
     # Удаляем старое сообщение с категориями
     try:
         await query.message.delete()
@@ -671,9 +675,13 @@ async def category_button(
         pass
 
     # Заголовок категории
-    await query.message.chat.send_message(
+    header_message = await query.message.chat.send_message(
         f"🌿 {selected_category}\n\n"
         "Оберіть товар:"
+    )
+
+    context.user_data["category_header_message_id"] = (
+        header_message.message_id
     )
 
     # Показываем каждый товар отдельным сообщением
@@ -742,7 +750,7 @@ async def category_button(
                 ).append(sent_message.message_id)
 
     # Кнопка возврата к категориям
-    await query.message.chat.send_message(
+    back_message = await query.message.chat.send_message(
         "Оберіть дію:",
         reply_markup=InlineKeyboardMarkup([
             [
@@ -752,6 +760,10 @@ async def category_button(
                 )
             ]
         ])
+    )
+
+    context.user_data["category_back_message_id"] = (
+        back_message.message_id
     )
 
     print(
@@ -780,6 +792,32 @@ async def product_button(
             pass
 
     context.user_data["category_message_ids"] = []
+    header_message_id = context.user_data.get(
+        "category_header_message_id"
+    )
+
+    if header_message_id:
+        try:
+            await query.message.chat.delete_message(
+                header_message_id
+            )
+        except Exception:
+            pass
+
+    back_message_id = context.user_data.get(
+        "category_back_message_id"
+    )
+
+    if back_message_id:
+        try:
+            await query.message.chat.delete_message(
+                back_message_id
+            )
+        except Exception:
+            pass
+
+    context.user_data["category_header_message_id"] = None
+    context.user_data["category_back_message_id"] = None
 
     print("=== PRODUCT BUTTON ===", flush=True)
 
