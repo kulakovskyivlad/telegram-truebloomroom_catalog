@@ -3,9 +3,11 @@ import re
 import json
 import asyncio
 import threading
+import io
 
 import gspread
 from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import AuthorizedSession
 from flask import Flask, request, jsonify
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -67,6 +69,52 @@ def get_stock_sheet():
 def get_flowers_sheet():
     spreadsheet = get_spreadsheet()
     return spreadsheet.worksheet("Цветы")
+
+def get_drive_file_id(url):
+    if not url:
+        return ""
+
+    match = re.search(r"/file/d/([^/]+)", url)
+
+    if match:
+        return match.group(1)
+
+    return ""
+
+def download_drive_photo(url):
+    file_id = get_drive_file_id(url)
+
+    if not file_id:
+        return None
+
+    try:
+        credentials_info = json.loads(
+            os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+        )
+
+        credentials = Credentials.from_service_account_info(
+            credentials_info,
+            scopes=SCOPES,
+        )
+
+        session = AuthorizedSession(credentials)
+
+        response = session.get(
+            f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
+        )
+
+        if response.status_code != 200:
+            print(
+                f"Ошибка загрузки фото из Google Drive: "
+                f"{response.status_code} {response.text}"
+            )
+            return None
+
+        return io.BytesIO(response.content)
+
+    except Exception as error:
+        print(f"Ошибка получения фото из Google Drive: {error}")
+        return None
 
 def get_orders_sheet():
     spreadsheet = get_spreadsheet()
@@ -365,6 +413,7 @@ def load_catalog():
             "original_name": product["name"],
             "price": product["price"],
             "category": product["category"],
+            "photo": flower["photo"],
         })
 
     flowers_catalog = load_flowers_catalog()
@@ -387,6 +436,7 @@ def load_flowers_catalog():
     price_index = headers.index("Цена продажи")
     category_index = headers.index("Категория")
     catalog_product_index = headers.index("Товар для каталога")
+    photo_index = headers.index("Фото")
 
     flowers = {}
 
@@ -413,6 +463,7 @@ def load_flowers_catalog():
         stock = parse_number(row[stock_index])
         price = parse_number(row[price_index])
         category = str(row[category_index]).strip()
+        photo = str(row[photo_index]).strip()
 
         key = normalize_product_name(variety)
 
@@ -423,6 +474,7 @@ def load_flowers_catalog():
                 "stock": 0.0,
                 "price": 0.0,
                 "category": category,
+                "photo": photo,
             }
 
         flowers[key]["stock"] += stock
@@ -430,6 +482,7 @@ def load_flowers_catalog():
         flowers[key]["name"] = variety
         flowers[key]["catalog_name"] = catalog_name
         flowers[key]["category"] = category
+        flowers[key]["photo"] = photo
 
     catalog = []
 
@@ -710,12 +763,42 @@ async def product_button(
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(
-        f"🌿 {product['name']}\n\n"
-        f"Ціна: {format_price(product['price'])} грн\n\n"
-        "Оберіть кількість:",
-        reply_markup=reply_markup,
-    )
+    photo_url = product.get("photo", "")
+
+    if photo_url:
+        photo = await asyncio.to_thread(
+            download_drive_photo,
+            photo_url,
+        )
+
+        if photo:
+            photo.name = "product.jpg"
+
+            await query.message.delete()
+
+            await query.message.chat.send_photo(
+                photo=photo,
+                caption=(
+                    f"🌿 {product['name']}\n\n"
+                    f"Ціна: {format_price(product['price'])} грн\n\n"
+                    "Оберіть кількість:"
+                ),
+                reply_markup=reply_markup,
+            )
+        else:
+            await query.edit_message_text(
+                f"🌿 {product['name']}\n\n"
+                f"Ціна: {format_price(product['price'])} грн\n\n"
+                "Оберіть кількість:",
+                reply_markup=reply_markup,
+            )
+    else:
+        await query.edit_message_text(
+            f"🌿 {product['name']}\n\n"
+            f"Ціна: {format_price(product['price'])} грн\n\n"
+            "Оберіть кількість:",
+            reply_markup=reply_markup,
+        )
 
     print(
         f"Выбран товар: {product['name']}",
