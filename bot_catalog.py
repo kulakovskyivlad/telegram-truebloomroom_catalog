@@ -1889,6 +1889,57 @@ async def back_categories(
 
     await query.answer()
 
+    # Удаляем текущее сообщение
+    try:
+        await query.message.delete()
+    except Exception:
+        pass
+
+    # Удаляем сообщения товаров категории
+    message_ids = context.user_data.get(
+        "category_message_ids",
+        []
+    )
+
+    for message_id in message_ids:
+        try:
+            await query.message.chat.delete_message(
+                message_id
+            )
+        except Exception:
+            pass
+
+    # Удаляем заголовок категории
+    header_message_id = context.user_data.get(
+        "category_header_message_id"
+    )
+
+    if header_message_id:
+        try:
+            await query.message.chat.delete_message(
+                header_message_id
+            )
+        except Exception:
+            pass
+
+    # Удаляем нижнее сообщение с кнопкой назад
+    back_message_id = context.user_data.get(
+        "category_back_message_id"
+    )
+
+    if back_message_id:
+        try:
+            await query.message.chat.delete_message(
+                back_message_id
+            )
+        except Exception:
+            pass
+
+    # Очищаем сохранённые ID
+    context.user_data["category_message_ids"] = []
+    context.user_data["category_header_message_id"] = None
+    context.user_data["category_back_message_id"] = None
+
     catalog = context.user_data.get("catalog")
 
     if not catalog:
@@ -1926,7 +1977,7 @@ async def back_categories(
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await query.edit_message_text(
+    await query.message.chat.send_message(
         "🌿 Каталог\n\nОберіть категорію:",
         reply_markup=reply_markup,
     )
