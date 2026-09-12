@@ -38,6 +38,7 @@ RENDER_EXTERNAL_URL = os.environ["RENDER_EXTERNAL_URL"]
 PORT = int(os.environ.get("PORT", 10000))
 
 GOOGLE_SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+CONSULTATION_ADMIN_ID = os.environ["CONSULTATION_ADMIN_ID"].strip()
 
 
 SCOPES = [
@@ -578,7 +579,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         ])
 
-    # Кнопка корзины
+    keyboard.append([
+        InlineKeyboardButton(
+            "💬 Консультація по каталогу",
+            url=f"tg://user?id={CONSULTATION_ADMIN_ID}"
+        )
+    ])
+
     keyboard.append([
         InlineKeyboardButton(
             "🛒 Кошик",
@@ -1746,6 +1753,13 @@ async def cancel_checkout(
 
     keyboard.append([
         InlineKeyboardButton(
+            "💬 Консультація по каталогу",
+            url=f"tg://user?id={CONSULTATION_ADMIN_ID}"
+        )
+    ])
+
+    keyboard.append([
+        InlineKeyboardButton(
             "🛒 Кошик",
             callback_data="show_cart"
         )
@@ -1988,6 +2002,13 @@ async def back_categories(
         ])
 
     # Корзина также доступна после возврата к категориям
+    keyboard.append([
+        InlineKeyboardButton(
+            "💬 Консультація по каталогу",
+            url=f"tg://user?id={CONSULTATION_ADMIN_ID}"
+        )
+    ])
+
     keyboard.append([
         InlineKeyboardButton(
             "🛒 Кошик",
