@@ -46,6 +46,12 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive.readonly",
 ]
 
+CATEGORY_ORDER = [
+    "Підлітки орхідеї",
+    "Добрива та стимулятори",
+    "Супутні товари",
+    "Горщики та кашпо",
+]
 
 # ============================================================
 # GOOGLE SHEETS
@@ -567,6 +573,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if category not in categories:
             categories.append(category)
+
+    categories.sort(
+        key=lambda category: (
+            CATEGORY_ORDER.index(category)
+            if category in CATEGORY_ORDER
+            else len(CATEGORY_ORDER)
+        )
+    )
 
     # Создаем кнопки категорий
     keyboard = []
@@ -1741,6 +1755,14 @@ async def cancel_checkout(
         if category not in categories:
             categories.append(category)
 
+    categories.sort(
+        key=lambda category: (
+            CATEGORY_ORDER.index(category)
+            if category in CATEGORY_ORDER
+            else len(CATEGORY_ORDER)
+        )
+    )
+
     keyboard = []
 
     for index, category in enumerate(categories):
@@ -1990,6 +2012,14 @@ async def back_categories(
 
         if category not in categories:
             categories.append(category)
+
+    categories.sort(
+        key=lambda category: (
+            CATEGORY_ORDER.index(category)
+            if category in CATEGORY_ORDER
+            else len(CATEGORY_ORDER)
+        )
+    )
 
     keyboard = []
 
