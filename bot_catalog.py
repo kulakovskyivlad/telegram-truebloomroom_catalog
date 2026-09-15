@@ -665,6 +665,14 @@ async def category_button(
         if category not in categories:
             categories.append(category)
 
+    categories.sort(
+        key=lambda category: (
+            CATEGORY_ORDER.index(category)
+            if category in CATEGORY_ORDER
+            else len(CATEGORY_ORDER)
+        )
+    )
+
     if category_index >= len(categories):
         await query.edit_message_text(
             "Категорія більше недоступна. Натисніть /start."
