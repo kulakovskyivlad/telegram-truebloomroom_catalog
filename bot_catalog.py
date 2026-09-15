@@ -796,9 +796,14 @@ async def category_button(
                         reply_markup=reply_markup,
                     )
 
-                    await query.message.chat.send_message(
+                    description_message = await query.message.chat.send_message(
                         product_text
                     )
+
+                    context.user_data.setdefault(
+                        "category_message_ids",
+                        []
+                    ).append(description_message.message_id)
 
                 context.user_data.setdefault(
                     "category_message_ids",
