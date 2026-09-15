@@ -784,13 +784,21 @@ async def category_button(
             if photo:
                 photo.name = "product.jpg"
 
-                sent_message = await query.message.chat.send_photo(
-                    photo=photo,
-                    caption=(
+                if len(product_text) <= 1024:
+                    sent_message = await query.message.chat.send_photo(
+                        photo=photo,
+                        caption=product_text,
+                        reply_markup=reply_markup,
+                    )
+                else:
+                    sent_message = await query.message.chat.send_photo(
+                        photo=photo,
+                        reply_markup=reply_markup,
+                    )
+
+                    await query.message.chat.send_message(
                         product_text
-                    ),
-                    reply_markup=reply_markup,
-                )
+                    )
 
                 context.user_data.setdefault(
                     "category_message_ids",
