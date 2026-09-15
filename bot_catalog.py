@@ -2194,17 +2194,16 @@ def health():
     })
 
 
-@flask_app.post("/telegram")
-def telegram_webhook():
-
-    if not BOT_READY.is_set():
-        return jsonify({
-            "status": "bot_not_ready"
-        }), 503
+def process_pending_telegram_update(data):
+    if not BOT_READY.wait(timeout=120):
+        print(
+            "Команда Telegram не обработана: "
+            "бот не запустился за 120 секунд.",
+            flush=True,
+        )
+        return
 
     try:
-        data = request.get_json(force=True)
-
         update = Update.de_json(
             data,
             application.bot,
@@ -2217,12 +2216,29 @@ def telegram_webhook():
 
         future.result(timeout=50)
 
+    except Exception as error:
+        print(
+            f"Ошибка обработки команды Telegram: {error}",
+            flush=True,
+        )
+
+
+@flask_app.post("/telegram")
+def telegram_webhook():
+    try:
+        data = request.get_json(force=True)
+
+        threading.Thread(
+            target=process_pending_telegram_update,
+            args=(data,),
+            daemon=True,
+        ).start()
+
         return jsonify({
-            "status": "ok"
+            "status": "accepted"
         })
 
     except Exception as error:
-
         print("Webhook error:", error)
 
         return jsonify({
