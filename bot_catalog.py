@@ -886,47 +886,7 @@ async def product_button(
     query = update.callback_query
 
     await query.answer()
-    message_ids = context.user_data.get(
-        "category_message_ids",
-        []
-    )
-
-    for message_id in message_ids:
-        try:
-            await query.message.chat.delete_message(
-                message_id
-            )
-        except Exception:
-            pass
-
-    context.user_data["category_message_ids"] = []
-    header_message_id = context.user_data.get(
-        "category_header_message_id"
-    )
-
-    if header_message_id:
-        try:
-            await query.message.chat.delete_message(
-                header_message_id
-            )
-        except Exception:
-            pass
-
-    back_message_id = context.user_data.get(
-        "category_back_message_id"
-    )
-
-    if back_message_id:
-        try:
-            await query.message.chat.delete_message(
-                back_message_id
-            )
-        except Exception:
-            pass
-
-    context.user_data["category_header_message_id"] = None
-    context.user_data["category_back_message_id"] = None
-
+    
     print("=== PRODUCT BUTTON ===", flush=True)
 
     try:
@@ -1911,118 +1871,10 @@ async def back_products(
 
     await query.answer()
 
-    products = context.user_data.get(
-        "category_products"
-    )
-
-    if not products:
-        await query.edit_message_text(
-            "Список товарів застарів. Натисніть /start."
-        )
-
-        return
-
-    # Удаляем текущую карточку товара
     try:
         await query.message.delete()
     except Exception:
         pass
-
-    # Получаем категорию из первого товара
-    category = products[0]["category"]
-
-    # Заголовок категории
-    header_message = await query.message.chat.send_message(
-        f"🌿 {category}\n\n"
-        "Оберіть товар:"
-    )
-
-    context.user_data["category_header_message_id"] = (
-        header_message.message_id
-    )
-
-    # Показываем товары категории
-    context.user_data["category_message_ids"] = []
-    for index, product in enumerate(products):
-
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Обрати товар",
-                    callback_data=f"product:{index}"
-                )
-            ]
-        ]
-
-        reply_markup = InlineKeyboardMarkup(
-            keyboard
-        )
-
-        photo_url = product.get("photo", "")
-
-        if photo_url:
-            photo = await asyncio.to_thread(
-                download_drive_photo,
-                photo_url,
-            )
-
-            if photo:
-                photo.name = "product.jpg"
-
-                sent_message = await query.message.chat.send_photo(
-                    photo=photo,
-                    caption=(
-                        f"🌿 {product['name']}\n\n"
-                        f"Ціна: "
-                        f"{format_price(product['price'])} грн"
-                    ),
-                    reply_markup=reply_markup,
-                )
-
-                context.user_data["category_message_ids"].append(
-                    sent_message.message_id
-                )
-
-            else:
-                sent_message = await query.message.chat.send_message(
-                    f"🌿 {product['name']}\n\n"
-                    f"Ціна: "
-                    f"{format_price(product['price'])} грн",
-                    reply_markup=reply_markup,
-                )
-
-                context.user_data["category_message_ids"].append(
-                    sent_message.message_id
-                )
-
-        else:
-            sent_message = await query.message.chat.send_message(
-                f"🌿 {product['name']}\n\n"
-                f"Ціна: "
-                f"{format_price(product['price'])} грн",
-                reply_markup=reply_markup,
-            )
-
-            context.user_data["category_message_ids"].append(
-                sent_message.message_id
-            )
-
-    # Кнопка возврата к категориям
-    back_message = await query.message.chat.send_message(
-        "Оберіть дію:",
-        reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton(
-                    "← Назад до категорій",
-                    callback_data="back_categories"
-                )
-            ]
-        ])
-    )
-
-    context.user_data["category_back_message_id"] = (
-        back_message.message_id
-    )
 
 async def back_categories(
     update: Update,
