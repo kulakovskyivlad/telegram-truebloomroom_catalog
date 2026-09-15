@@ -749,9 +749,9 @@ async def category_button(
 
     # Показываем каждый товар отдельным сообщением
     for index, product in enumerate(products):
-
         product_text = (
-            product_text
+            f"🌿 {product['name']}\n\n"
+            f"Ціна: {format_price(product['price'])} грн"
         )
 
         if (
