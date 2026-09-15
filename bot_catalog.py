@@ -59,6 +59,11 @@ ORCHID_TEENAGERS_IMAGE_URL = (
     "15z9qRwpdChEFm4xr6iT9ipT3Mm4TtbJe/view?usp=drive_link"
 )
 
+ORCHID_TEENAGERS_SECOND_IMAGE_URL = (
+    "https://drive.google.com/file/d/"
+    "17xG-FNHG99ocf99_YlnriAmYzDSeNxNr/view?usp=drive_link"
+)
+
 # ============================================================
 # GOOGLE SHEETS
 # ============================================================
@@ -741,6 +746,23 @@ async def category_button(
 
             sent_message = await query.message.chat.send_photo(
                 photo=category_photo,
+            )
+
+            context.user_data.setdefault(
+                "category_message_ids",
+                []
+            ).append(sent_message.message_id)
+
+        second_category_photo = await asyncio.to_thread(
+            download_drive_photo,
+            ORCHID_TEENAGERS_SECOND_IMAGE_URL,
+        )
+
+        if second_category_photo:
+            second_category_photo.name = "orchid_teenagers_second.jpg"
+
+            sent_message = await query.message.chat.send_photo(
+                photo=second_category_photo,
             )
 
             context.user_data.setdefault(
