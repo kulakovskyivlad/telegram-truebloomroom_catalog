@@ -53,6 +53,11 @@ CATEGORY_ORDER = [
     "Горщики та кашпо",
 ]
 
+ORCHID_TEENAGERS_IMAGE_URL = (
+    "https://drive.google.com/file/d/"
+    "1qR5KOYrjDjQKla62WSfL8hrNklNocQ_r/view?usp=drive_link"
+)
+
 # ============================================================
 # GOOGLE SHEETS
 # ============================================================
@@ -704,6 +709,24 @@ async def category_button(
     context.user_data["category_header_message_id"] = (
         header_message.message_id
     )
+
+    if selected_category == "Підлітки орхідеї":
+        category_photo = await asyncio.to_thread(
+            download_drive_photo,
+            ORCHID_TEENAGERS_IMAGE_URL,
+        )
+
+        if category_photo:
+            category_photo.name = "orchid_teenagers.jpg"
+
+            sent_message = await query.message.chat.send_photo(
+                photo=category_photo,
+            )
+
+            context.user_data.setdefault(
+                "category_message_ids",
+                []
+            ).append(sent_message.message_id)
 
     # Показываем каждый товар отдельным сообщением
     for index, product in enumerate(products):
