@@ -55,7 +55,7 @@ CATEGORY_ORDER = [
 
 ORCHID_TEENAGERS_IMAGE_URL = (
     "https://drive.google.com/file/d/"
-    "1qR5KOYrjDjQKla62WSfL8hrNklNocQ_r/view?usp=drive_link"
+    "1x5I7fBCLEucJuk92jZLVze2GB2i0qZpa/view?usp=drive_link"
 )
 
 # ============================================================
