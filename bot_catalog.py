@@ -55,7 +55,7 @@ CATEGORY_ORDER = [
 
 ORCHID_TEENAGERS_IMAGE_URL = (
     "https://drive.google.com/file/d/"
-    "1x5I7fBCLEucJuk92jZLVze2GB2i0qZpa/view?usp=drive_link"
+    "15z9qRwpdChEFm4xr6iT9ipT3Mm4TtbJe/view?usp=drive_link"
 )
 
 # ============================================================
@@ -319,6 +319,7 @@ def load_catalog():
         price_index = headers.index("Цена продажи")
         category_index = headers.index("Категория")
         photo_index = headers.index("Фото")
+        description_index = headers.index("Описание для каталога")
     except ValueError as error:
         raise ValueError(
             f"Не найдена необходимая колонка в листе '{SHEET_NAME}'. "
@@ -388,6 +389,12 @@ def load_catalog():
             row[photo_index]
         ).strip()
 
+        description = (
+            str(row[description_index]).strip()
+            if len(row) > description_index
+            else ""
+        )
+
         key = normalize_product_name(
             product_name
         )
@@ -400,6 +407,7 @@ def load_catalog():
                 "price": 0.0,
                 "category": category,
                 "photo": photo,
+                "description": description,
             }
 
         # Остаток суммируем по всем строкам
@@ -418,6 +426,8 @@ def load_catalog():
         
         # Фото берем из последней строки
         products[key]["photo"] = photo
+
+        products[key]["description"] = description
 
     # Формируем итоговый каталог
     catalog = []
@@ -439,6 +449,7 @@ def load_catalog():
             "price": product["price"],
             "category": product["category"],
             "photo": product["photo"],
+            "description": product["description"],
         })
 
     flowers_catalog = load_flowers_catalog()
@@ -739,6 +750,18 @@ async def category_button(
     # Показываем каждый товар отдельным сообщением
     for index, product in enumerate(products):
 
+        product_text = (
+            product_text
+        )
+
+        if (
+            product["category"] == "Добрива та стимулятори"
+            and product.get("description")
+        ):
+            product_text += (
+                f"\n\n{product['description']}"
+            )
+
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -764,8 +787,7 @@ async def category_button(
                 sent_message = await query.message.chat.send_photo(
                     photo=photo,
                     caption=(
-                        f"🌿 {product['name']}\n\n"
-                        f"Ціна: {format_price(product['price'])} грн"
+                        product_text
                     ),
                     reply_markup=reply_markup,
                 )
@@ -778,8 +800,7 @@ async def category_button(
             else:
                 # Если фото не загрузилось — показываем товар без фото
                 sent_message = await query.message.chat.send_message(
-                    f"🌿 {product['name']}\n\n"
-                    f"Ціна: {format_price(product['price'])} грн",
+                    product_text,
                     reply_markup=reply_markup,
                 )
 
@@ -791,8 +812,7 @@ async def category_button(
         else:
             # Если фото в таблице не указано
                 sent_message = await query.message.chat.send_message(
-                    f"🌿 {product['name']}\n\n"
-                    f"Ціна: {format_price(product['price'])} грн",
+                    product_text,
                     reply_markup=reply_markup,
                 )
 
