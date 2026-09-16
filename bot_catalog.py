@@ -2148,7 +2148,7 @@ async def run_bot():
 
     await application.bot.set_webhook(
         url=webhook_url,
-        drop_pending_updates=True,
+        drop_pending_updates=False,
     )
 
     print("=== WEBHOOK SET ===", flush=True)
